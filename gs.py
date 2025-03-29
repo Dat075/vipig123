@@ -11,9 +11,9 @@ import traceback
 VERSION = "1.0.1"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
+
 # Hệ thống kiểm tra cập nhật
 def check_for_updates():
-    """Kiểm tra phiên bản mới"""
     try:
         print("\033[1;33mĐang kiểm tra cập nhật...")
         response = requests.get(GITHUB_VERSION_URL, timeout=10)
@@ -27,20 +27,15 @@ def check_for_updates():
         return None
 
 def update_script():
-    """Tải và cập nhật script"""
     try:
         print("\033[1;33mĐang tải phiên bản mới...")
         response = requests.get(GITHUB_RAW_URL, timeout=15)
         if response.status_code == 200:
-            # Tạo backup của file cũ
             script_path = os.path.abspath(__file__)
             backup_path = script_path + ".bak"
             shutil.copy2(script_path, backup_path)
-            
-            # Ghi file mới
             with open(script_path, 'w', encoding='utf-8') as f:
                 f.write(response.text)
-            
             print("\033[1;32mCập nhật thành công! Khởi động lại tool để áp dụng thay đổi.")
             return True
         else:
@@ -50,7 +45,6 @@ def update_script():
         print(f"\033[1;31mLỗi trong quá trình cập nhật: {e}")
         return False
 
-# Kiểm tra cập nhật khi khởi động
 def check_update_on_startup():
     latest_version = check_for_updates()
     if latest_version:
@@ -64,92 +58,6 @@ def check_update_on_startup():
             print("\033[1;33mTiếp tục sử dụng phiên bản cũ.")
     else:
         print(f"\033[1;32mBạn đang sử dụng phiên bản mới nhất: {VERSION}")
-
-# Hệ thống quản lý cookie die
-def mark_cookie_as_die(cookie):
-    """Đánh dấu cookie là die để bỏ qua trong các lần chạy sau"""
-    try:
-        # Đọc file danh sách cookie die
-        die_cookies = []
-        if os.path.exists('cookie_die.txt'):
-            with open('cookie_die.txt', 'r', encoding='utf-8') as f:
-                die_cookies = [line.strip() for line in f.readlines() if line.strip()]
-        
-        # Kiểm tra xem cookie đã có trong danh sách chưa
-        if cookie not in die_cookies:
-            # Thêm cookie mới vào danh sách
-            with open('cookie_die.txt', 'a', encoding='utf-8') as f:
-                f.write(cookie + '\n')
-            
-            # Cập nhật file cookie chính bằng cách loại bỏ cookie die
-            if os.path.exists('ck.txt'):
-                with open('ck.txt', 'r', encoding='utf-8') as f:
-                    live_cookies = [line.strip() for line in f.readlines() if line.strip() and line.strip() != cookie]
-                
-                with open('ck.txt', 'w', encoding='utf-8') as f:
-                    for c in live_cookies:
-                        f.write(c + '\n')
-            
-            print(f"\033[1;31mĐã đánh dấu cookie là die và loại bỏ khỏi danh sách")
-            return True
-    except Exception as e:
-        print(f"\033[1;31mLỗi khi đánh dấu cookie die: {e}")
-    return False
-
-def is_cookie_die(cookie):
-    """Kiểm tra xem cookie đã bị đánh dấu là die chưa"""
-    try:
-        if os.path.exists('cookie_die.txt'):
-            with open('cookie_die.txt', 'r', encoding='utf-8') as f:
-                die_cookies = [line.strip() for line in f.readlines()]
-                return cookie in die_cookies
-    except Exception as e:
-        print(f"\033[1;31mLỗi khi kiểm tra cookie die: {e}")
-    return False
-
-# Menu quản lý cookie
-def show_cookie_menu():
-    print("\033[97m════════════════════════════════════════════════")
-    print(f"{lam}QUẢN LÝ COOKIE{trang}")
-    print(f"{luc}1. Xem danh sách cookie live")
-    print(f"{luc}2. Xem danh sách cookie die")
-    print(f"{luc}3. Xóa tất cả cookie die")
-    print(f"{luc}4. Quay lại")
-    print("\033[97m════════════════════════════════════════════════")
-    
-    choice = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập lựa chọn của bạn:\033[1;33m ')
-    
-    if choice == '1':
-        # Hiển thị danh sách cookie live
-        if os.path.exists('ck.txt'):
-            with open('ck.txt', 'r', encoding='utf-8') as f:
-                cookies = f.read().splitlines()
-            print(f"\033[1;32mCó {len(cookies)} cookie live:")
-            for i, c in enumerate(cookies):
-                print(f"{i+1}. {c[:30]}...")
-        else:
-            print("\033[1;31mKhông có file cookie!")
-    
-    elif choice == '2':
-        # Hiển thị danh sách cookie die
-        if os.path.exists('cookie_die.txt'):
-            with open('cookie_die.txt', 'r', encoding='utf-8') as f:
-                cookies = f.read().splitlines()
-            print(f"\033[1;31mCó {len(cookies)} cookie die:")
-            for i, c in enumerate(cookies):
-                print(f"{i+1}. {c[:30]}...")
-        else:
-            print("\033[1;32mKhông có cookie die!")
-    
-    elif choice == '3':
-        # Xóa tất cả cookie die
-        if os.path.exists('cookie_die.txt'):
-            os.remove('cookie_die.txt')
-            print('\033[1;32mĐã xóa tất cả cookie die!')
-        else:
-            print("\033[1;32mKhông có file cookie die!")
-    
-    return
 
 def banner():
     print("\033[97m════════════════════════════════════════════════")
@@ -165,14 +73,13 @@ vang = '\x1b[1;33m'
 tim = '\x1b[1;35m'
 lamd = '\x1b[1;34m'
 lam = '\x1b[1;36m'
-cam = '\x1b[38;5;208m'  # Thêm màu cam
+cam = '\x1b[38;5;208m'
 hong = '\x1b[1;95m'
 thanh_xau="\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32m"
 thanh_dep="\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32m"
 
 dem = 0
 
-# Enhanced error handling for coin retrieval
 def coin(ckvp):
     try:
         h_xu = {'user-agent':'Mozilla/5.0 (Linux; Android 11; Live 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.28 Mobile Safari/537.36','cookie':ckvp}
@@ -185,7 +92,6 @@ def coin(ckvp):
         print(f"\033[1;31mLỗi khi lấy số xu: {e}")
         return "0"
 
-# Improved cookie handling
 def cookie(token):
     try:
         ck = requests.post('https://vipig.net/logintoken.php',headers={'Content-type':'application/x-www-form-urlencoded',},data={'access_token':token}, timeout=10)
@@ -198,7 +104,6 @@ def cookie(token):
         print(f"\033[1;31mLỗi khi lấy cookie: {e}")
         return None
 
-# Improved task retrieval with error handling
 def get_nv(type, ckvp):
     try:
         headers={'content-type':'text/html; charset=UTF-8','accept':'application/json, text/javascript, */*; q=0.01','accept-language':'vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5','referer':'https://vipig.net/kiemtien/','x-requested-with':'XMLHttpRequest','sec-ch-ua-mobile':'?1','user-agent':'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36','sec-ch-ua-platform':'"Android"','sec-fetch-site':'same-origin','sec-fetch-mode':'cors','sec-fetch-dest':'empty','cookie':ckvp}
@@ -208,7 +113,6 @@ def get_nv(type, ckvp):
         print(f"\033[1;31mLỗi khi lấy nhiệm vụ {type}: {e}")
         return []
 
-# Improved reward claiming with error handling
 def nhan_tien(list, ckvp, type):
     try:
         data_xu='id='+str(list)
@@ -220,7 +124,6 @@ def nhan_tien(list, ckvp, type):
         print(f"\033[1;31mLỗi khi nhận tiền: {e}")
         return "error"
 
-# Improved subscription reward claiming
 def nhan_sub(list, ckvp):
     try:
         data_xu='id='+str(list[0:len(list)-1])
@@ -240,14 +143,12 @@ def nhan_sub(list, ckvp):
         print(f"\033[1;31mLỗi khi nhận sub: {e}")
         return {"error": str(e)}
 
-# Enhanced delay function with reduced time
 def delay(dl):
     try:
-        # Giảm thời gian delay xuống một nửa để tăng tốc độ làm nhiệm vụ
         actual_delay = max(1, int(dl/2))
         for i in range(actual_delay, -1, -1):
             print('[AN ORIN]['+str(i)+' Giây]           ',end='\r')
-            sleep(0.8)  # Giảm thời gian sleep giữa mỗi lần đếm
+            sleep(0.8)
     except KeyboardInterrupt:
         print("\n\033[1;31mĐã dừng delay bởi người dùng")
     except Exception as e:
@@ -255,12 +156,10 @@ def delay(dl):
         sleep(actual_delay)
         print(actual_delay,end='\r')
 
-# Better adaptive delay with backoff
 def delay_with_backoff(attempts, base_delay=5):
     try:
-        # Giảm thời gian backoff xuống để tăng tốc độ
         delay_time = base_delay * (1.3 ** min(attempts, 5))
-        delay_time = min(delay_time, 30)  # Giảm cap xuống 30 giây
+        delay_time = min(delay_time, 30)
         for i in range(int(delay_time), -1, -1):
             print(f'[AN ORIN][Đang nghỉ {i} Giây để tránh block]           ',end='\r')
             sleep(0.8)
@@ -270,7 +169,6 @@ def delay_with_backoff(attempts, base_delay=5):
         print(f"\n\033[1;31mLỗi trong quá trình adaptive delay: {e}")
         sleep(base_delay)
 
-# Improved cookie info saving
 def save_cookie_info(cookie_info):
     try:
         file_path = 'cookie_storage.json'
@@ -284,7 +182,6 @@ def save_cookie_info(cookie_info):
                 data = []
                 print("\033[1;31mFile JSON lỗi, tạo mới danh sách cookie")
         
-        # Check if cookie already exists
         for i, item in enumerate(data):
             if item.get('cookie') == cookie_info.get('cookie'):
                 data[i] = cookie_info
@@ -294,22 +191,14 @@ def save_cookie_info(cookie_info):
         
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-            
         return True
     except Exception as e:
         print(f"\033[1;31mLỗi khi lưu thông tin cookie: {e}")
         return False
 
-# Improved Instagram username retrieval with proper retries and error handling
 def name(cookie, retries=3):
-    # Kiểm tra trước xem cookie đã bị đánh dấu là die chưa
-    if is_cookie_die(cookie):
-        print(f"\033[1;31mCookie đã bị đánh dấu là die từ trước")
-        return 'die', 'die'
-    
     user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
     
-    # Xử lý useragent trong cookie an toàn hơn
     if 'useragent=' in cookie:
         try:
             parts = cookie.split('useragent=')
@@ -320,31 +209,25 @@ def name(cookie, retries=3):
         except Exception:
             pass
     
-    # Xử lý user_id trong cookie an toàn hơn
     try:
         parts = cookie.split('ds_user_id=')
         if len(parts) < 2:
             print("\033[1;31mKhông tìm thấy ds_user_id trong cookie")
-            mark_cookie_as_die(cookie)
             return 'die', 'die'
         
         id_parts = parts[1].split(';')
         if not id_parts:
             print("\033[1;31mKhông thể trích xuất ds_user_id từ cookie")
-            mark_cookie_as_die(cookie)
             return 'die', 'die'
             
         user_id = id_parts[0]
         if not user_id:
             print("\033[1;31mds_user_id trống")
-            mark_cookie_as_die(cookie)
             return 'die', 'die'
     except Exception as e:
         print(f"\033[1;31mLỗi khi lấy user_id từ cookie: {e}")
-        mark_cookie_as_die(cookie)
         return 'die', 'die'
     
-    # Xử lý csrftoken trong cookie an toàn hơn
     csrf_token = ""
     if 'csrftoken=' in cookie:
         try:
@@ -390,26 +273,22 @@ def name(cookie, retries=3):
                         return user, id
                     else:
                         print("\033[1;31mPhản hồi thiếu thông tin user/username/pk")
-                        mark_cookie_as_die(cookie)
                 except json.JSONDecodeError:
                     print(f"\033[1;31mLỗi phân tích JSON: {response.text[:100]}...")
-                    mark_cookie_as_die(cookie)
             
-            elif response.status_code == 429:  # Too Many Requests
+            elif response.status_code == 429:
                 print(f'\033[1;31m[429] Quá nhiều yêu cầu, thử lại sau {5 * (attempt + 1)} giây...')
                 sleep(5 * (attempt + 1))
                 continue
             else:
                 print(f'\033[1;31m[Error] Status code: {response.status_code} - {response.text[:50]}...')
-                mark_cookie_as_die(cookie)
         
         except requests.exceptions.RequestException as e:
             print(f'\033[1;31m[Lỗi mạng] {str(e)}, thử lại lần {attempt + 1}/{retries}...')
             if attempt < retries - 1:
-                sleep(5)  # Delay trước khi thử lại
+                sleep(5)
                 continue
     
-    # Nếu hết số lần thử mà vẫn lỗi
     cookie_info = {
         'cookie': cookie,
         'username': None,
@@ -419,17 +298,10 @@ def name(cookie, retries=3):
     }
     
     save_cookie_info(cookie_info)
-    mark_cookie_as_die(cookie)
     return 'die', 'die'
 
-# Improved file operations
 def save_cookie_to_txt(cookie):
     try:
-        # Kiểm tra xem cookie đã bị đánh dấu là die chưa
-        if is_cookie_die(cookie):
-            print(f"\033[1;31mKhông lưu cookie đã die")
-            return False
-            
         with open('ck.txt', 'a', encoding='utf-8') as f:
             f.write(cookie + '\n')
         return True
@@ -455,11 +327,6 @@ def load_cookies_from_txt():
                 
             for cookie in cookies:
                 if cookie.strip():
-                    # Kiểm tra xem cookie đã bị đánh dấu là die chưa
-                    if is_cookie_die(cookie):
-                        print(f'Cookie đã bị đánh dấu là die từ trước, bỏ qua')
-                        continue
-                    
                     try:
                         ten = name(cookie)
                         if ten[0] != 'die':
@@ -467,8 +334,6 @@ def load_cookies_from_txt():
                             print(f'User Instagram: {cam}{ten[0]}{trang} - Live')
                         else:
                             print(f'Cookie: {cookie[:20]}... - Die')
-                            # Đánh dấu cookie là die
-                            mark_cookie_as_die(cookie)
                     except Exception as e:
                         print(f"\033[1;31mLỗi khi kiểm tra cookie: {e}")
                         
@@ -478,7 +343,6 @@ def load_cookies_from_txt():
         print(f"\033[1;31mLỗi khi đọc file cookie: {e}")
         return []
 
-# Improved console formatting
 def bongoc(so):
     try:
         a= "────"*so
@@ -491,14 +355,8 @@ def bongoc(so):
         print(f"\033[1;31mLỗi khi in đường gạch ngang: {e}")
         print("────"*so)
 
-# Improved Instagram interactions with better error handling
 def like(id, cookie):
     try:
-        # Kiểm tra xem cookie đã bị đánh dấu là die chưa
-        if is_cookie_die(cookie):
-            print(f"\033[1;31mKhông thể sử dụng cookie đã die")
-            return '1'
-            
         headers = {
             "x-ig-app-id": "1217981644879628",
             "x-asbd-id": "198387",
@@ -527,14 +385,8 @@ def like(id, cookie):
         print(f"\033[1;31mLỗi trong quá trình like: {e}")
         return '1'
 
-# Improved post ID extraction with safe parsing
 def get_id(link, cookie):
     try:
-        # Kiểm tra xem cookie đã bị đánh dấu là die chưa
-        if is_cookie_die(cookie):
-            print(f"\033[1;31mKhông thể sử dụng cookie đã die")
-            return False
-            
         headers = {
             "x-ig-app-id": "1217981644879628",
             "x-asbd-id": "198387",
@@ -552,28 +404,22 @@ def get_id(link, cookie):
         
         if response.status_code == 200:
             a = response.text
-            
-            # Xử lý an toàn khi tìm ID
             if 'media?id=' not in a:
                 print("\033[1;31mKhông tìm thấy ID trong phản hồi")
                 return False
-                
             try:
                 parts = a.split('media?id=')
                 if len(parts) < 2:
                     print("\033[1;31mKhông thể phân tích ID từ phản hồi")
                     return False
-                    
                 id_parts = parts[1].split('"')
                 if not id_parts:
                     print("\033[1;31mKhông thể trích xuất ID từ phản hồi")
                     return False
-                    
                 id = id_parts[0]
                 if not id:
                     print("\033[1;31mID trống")
                     return False
-                    
                 return id
             except Exception as e:
                 print(f"\033[1;31mLỗi khi phân tích ID từ phản hồi: {e}")
@@ -585,14 +431,8 @@ def get_id(link, cookie):
         print(f"\033[1;31mLỗi trong quá trình lấy ID: {e}")
         return False
 
-# Improved follow function
 def follow(id, cookie):
     try:
-        # Kiểm tra xem cookie đã bị đánh dấu là die chưa
-        if is_cookie_die(cookie):
-            print(f"\033[1;31mKhông thể sử dụng cookie đã die")
-            return '1'
-            
         headers = {
             "x-ig-app-id": "1217981644879628",
             "x-asbd-id": "198387",
@@ -621,14 +461,8 @@ def follow(id, cookie):
         print(f"\033[1;31mLỗi trong quá trình follow: {e}")
         return '1'
 
-# Improved comment function with better error handling
 def cmt(msg, id, cookie):
     try:
-        # Kiểm tra xem cookie đã bị đánh dấu là die chưa
-        if is_cookie_die(cookie):
-            print(f"\033[1;31mKhông thể sử dụng cookie đã die")
-            return '1'
-            
         headers = {
             "x-ig-app-id": "1217981644879628",
             "x-asbd-id": "198387",
@@ -664,7 +498,6 @@ def cmt(msg, id, cookie):
         print(f"\033[1;31mLỗi trong quá trình comment: {e}")
         return '1'
 
-# Improved Instagram account configuration
 def cau_hinh(id_ig, ckvp):
     try:
         headers={'content-length':'23','sec-ch-ua':'"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"','accept':'*/*','content-type':'application/x-www-form-urlencoded; charset=UTF-8','x-requested-with':'XMLHttpRequest','sec-ch-ua-mobile':'?1','user-agent':'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36','sec-ch-ua-platform':'"Android"','sec-fetch-site':'same-origin','sec-fetch-mode':'cors','sec-fetch-dest':'empty','referer':'https://vipig.net/cauhinh/datnick.php','accept-language':'vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5','cookie':ckvp}
@@ -683,7 +516,6 @@ def cau_hinh(id_ig, ckvp):
         print(f"\033[1;31mLỗi trong quá trình cấu hình: {e}")
         return "error"
 
-# Improved logging function
 def log_action(action_type, id, status, message=""):
     try:
         tg = datetime.now().strftime('%H:%M:%S')
@@ -693,27 +525,11 @@ def log_action(action_type, id, status, message=""):
         
         print(log_entry)
         
-        # Optionally write to a log file
         with open("vipig_log.txt", "a", encoding="utf-8") as f:
             f.write(log_entry + "\n")
     except Exception as e:
         print(f"\033[1;31mLỗi khi ghi log: {e}")
 
-# Function to check if cookie is valid
-def check_cookie_valid(cookie):
-    try:
-        # Kiểm tra xem cookie đã bị đánh dấu là die chưa
-        if is_cookie_die(cookie):
-            return False
-            
-        user, id = name(cookie)
-        if user == 'die' or id == 'die':
-            return False
-        return True
-    except:
-        return False
-
-# Function to get total follow count - Thêm mới để đếm tổng số follow đã thực hiện
 def get_follow_count(id_ig):
     try:
         if os.path.exists(f"{id_ig}_follow_count.txt"):
@@ -725,7 +541,6 @@ def get_follow_count(id_ig):
         print(f"\033[1;31mLỗi khi đọc số lượng follow: {e}")
         return 0
 
-# Function to update follow count - Thêm mới để cập nhật tổng số follow
 def update_follow_count(id_ig, count):
     try:
         with open(f"{id_ig}_follow_count.txt", "w") as f:
@@ -735,24 +550,14 @@ def update_follow_count(id_ig, count):
         print(f"\033[1;31mLỗi khi cập nhật số lượng follow: {e}")
         return False
 
-# Main execution with improved error handling
 try:
-    # Xóa màn hình và hiển thị banner
     os.system("cls" if os.name == "nt" else "clear")
     banner()
     
-    # Kiểm tra cập nhật trước khi thực hiện các chức năng khác
     check_update_on_startup()
     
-    # Hiển thị menu quản lý cookie
-    cookie_menu_option = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mBạn muốn quản lý cookie không? (y/n):\033[1;33m ').lower()
-    if cookie_menu_option == 'y':
-        show_cookie_menu()
-    
-    # Khởi tạo danh sách cookie
     list_cookie = []
     
-    # Main login loop with error handling
     while True:
         token = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Access_Token Vipig:\033[1;33m ')
         
@@ -781,7 +586,6 @@ try:
     
     bongoc(14)
     
-    # Cookie management section with improved error handling
     list_cookie = []
     choice = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mBạn có muốn dùng lại các cookie cũ không? (y/n):\033[1;33m ').lower()
     
@@ -798,19 +602,13 @@ try:
                 if cookie == '' and x > 1:
                     break
                 
-                # Kiểm tra cookie đã die chưa
-                if is_cookie_die(cookie):
-                    print(f'\033[1;31mCookie này đã bị đánh dấu là die từ trước, bỏ qua')
-                    x = x - 1
-                    continue
-                    
                 ten = name(cookie)
                 if ten[0] != 'die':
                     print(f'User Instagram: {cam}{ten[0]}{trang} ')
                     list_cookie.append(cookie)
                     save_cookie_to_txt(cookie)
                     bongoc(14)
-                    sleep(1)  # Giảm delay để nhập cookie nhanh hơn
+                    sleep(1)
                 else:
                     print('\033[1;31mCookie Instagram Sai ! Vui Lòng Nhập Lại ! ! ! ')
                     x = x - 1
@@ -825,12 +623,6 @@ try:
         
         if not list_cookie:
             print('\033[1;31mKhông có cookie live nào trong file ck.txt! Vui lòng nhập cookie mới.')
-            choice = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mBạn có muốn xóa tất cả cookie die không? (y/n):\033[1;33m ').lower()
-            if choice == 'y':
-                if os.path.exists('cookie_die.txt'):
-                    os.remove('cookie_die.txt')
-                    print('\033[1;32mĐã xóa tất cả cookie die!')
-                    
             clear_cookie_file()
             x = 0
             print('[LƯU Ý] Muốn Dừng Thì Nhấn Enter')
@@ -843,19 +635,13 @@ try:
                     if cookie == '' and x > 1:
                         break
                     
-                    # Kiểm tra cookie đã die chưa
-                    if is_cookie_die(cookie):
-                        print(f'\033[1;31mCookie này đã bị đánh dấu là die từ trước, bỏ qua')
-                        x = x - 1
-                        continue
-                        
                     ten = name(cookie)
                     if ten[0] != 'die':
                         print(f'User Instagram: {cam}{ten[0]}{trang} ')
                         list_cookie.append(cookie)
                         save_cookie_to_txt(cookie)
                         bongoc(14)
-                        sleep(1)  # Giảm delay để nhập cookie nhanh hơn
+                        sleep(1)
                     else:
                         print('\033[1;31mCookie Instagram Sai ! Vui Lòng Nhập Lại ! ! ! ')
                         x = x - 1
@@ -869,18 +655,15 @@ try:
         print('\033[1;31mLựa chọn không hợp lệ! Thoát chương trình.')
         sys.exit()
     
-    # Clear screen and show banner
     os.system("cls" if os.name == "nt" else "clear")
     banner()
     
-    # Display account info
     print(f"""\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mTên Tài Khoản: \033[1;33m{user}
 \033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mXu Hiện Tại: \033[1;33m{xu}
 \033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mSố Cookie: \033[1;33m{len(list_cookie)}""")
     
     bongoc(14)
     
-    # Task selection
     print("""\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập [1] Để Chạy Nhiệm Vụ Like
 \033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập [2] Để Chạy Nhiệm Vụ Follow
 \033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập [3] Để Chạy Nhiệm Vụ Comment
@@ -890,7 +673,6 @@ try:
     
     bongoc(14)
     
-    # Configuration settings
     dl = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Delay:\033[1;33m '))
     
     print('Sau ____ Nhiệm Vụ Thì Kích Hoạt Chống Block. ',end='\r')
@@ -901,23 +683,13 @@ try:
     
     doi_acc = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mSau Bao Nhiêu Nhiệm Vụ Thì Đổi Nick:\033[1;33m '))
     
-    # Main task loop with improved error handling
     while True:
         try:
             x = 0
             anorin = 0
             
-            # Check if cookies are available
             if len(list_cookie) == 0:
                 print('\033[1;31mToàn Bộ Cookie Đã Out Vui Lòng Nhập Lại ! !')
-                
-                # Xóa tất cả cookie die và yêu cầu nhập lại
-                if os.path.exists('cookie_die.txt'):
-                    choice = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mBạn có muốn xóa tất cả cookie die không? (y/n):\033[1;33m ').lower()
-                    if choice == 'y':
-                        os.remove('cookie_die.txt')
-                        print('\033[1;32mĐã xóa tất cả cookie die!')
-                
                 clear_cookie_file()
                 
                 while True:
@@ -928,12 +700,6 @@ try:
                         if cookie == '' and x > 1:
                             break
                         
-                        # Kiểm tra cookie đã die chưa
-                        if is_cookie_die(cookie):
-                            print(f'\033[1;31mCookie này đã bị đánh dấu là die từ trước, bỏ qua')
-                            x = x - 1
-                            continue
-                            
                         ten = name(cookie)
                         if ten[0] != 'die':
                             print(f'User Instagram: {cam}{ten[0]}{trang} ')
@@ -950,9 +716,7 @@ try:
                         x = x - 1
                         bongoc(14)
             
-            # Process each cookie safely, with index check to avoid list index out of range
             for i in range(len(list_cookie)):
-                # Ensure index is within range (list might have changed)
                 if i >= len(list_cookie):
                     print(f"\033[1;31mChỉ số cookie vượt quá số lượng hiện có")
                     break
@@ -964,32 +728,17 @@ try:
                 loi_cmt = 0
                 cookie = list_cookie[i]
                 
-                # Kiểm tra cookie trước khi sử dụng
-                if is_cookie_die(cookie):
-                    print(f'\033[1;31mCookie này đã bị đánh dấu là die, bỏ qua')
-                    if cookie in list_cookie:
-                        list_cookie.remove(cookie)
-                    continue
-                
-                # Get user info and verify cookie
                 try:
                     user = name(cookie)
                     id_ig = user[1]
                     
                     if user[0] == 'die':
-                        print('\033[1;31mCookie Instagram Die ! ! !! ')
-                        mark_cookie_as_die(cookie)
-                        if cookie in list_cookie:
-                            list_cookie.remove(cookie)
+                        print(f'\033[1;31mCookie của {cam}{user[0]}{trang} đã die, chuyển sang cookie tiếp theo')
                         continue
                 except Exception as e:
                     print(f'\033[1;31mLỗi khi lấy thông tin user: {e}')
-                    mark_cookie_as_die(cookie)
-                    if cookie in list_cookie:
-                        list_cookie.remove(cookie)
                     continue
                 
-                # Configure account
                 try:
                     ngoc = cau_hinh(id_ig, ckvp)
                     if ngoc == '1':
@@ -999,28 +748,21 @@ try:
                     else:
                         print(f'Cấu Hình Thất Bại ID: {id_ig} | User: {cam}{user[0]}{trang} ')
                         delay(2)
-                        if cookie in list_cookie:
-                            list_cookie.remove(cookie)
                         continue
                 except Exception as e:
                     print(f'\033[1;31mLỗi khi cấu hình tài khoản: {e}')
                     delay(2)
-                    if cookie in list_cookie:
-                        list_cookie.remove(cookie)
                     continue
                 
-                # Lấy số lượng follow đã thực hiện từ trước
                 follow_count = get_follow_count(id_ig)
                 
                 anorin = 0
                 
-                # Main task execution loop
                 while True:
                     try:
                         if anorin == 1 or anorin == 2:
                             break
                         
-                        # Like tasks
                         if '1' in chon:
                             try:
                                 get_like = get_nv('', ckvp)
@@ -1037,7 +779,6 @@ try:
                                     
                                     for x in get_like:
                                         try:
-                                            # Kiểm tra xem phản hồi có chứa đúng dữ liệu hay không
                                             if not isinstance(x, dict):
                                                 print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
                                                 continue
@@ -1058,24 +799,15 @@ try:
                                             if lam == '1':
                                                 user = name(cookie)
                                                 if user[0] == 'die':
-                                                    print('Cookie Instagram Die ! ! !! ')
-                                                    mark_cookie_as_die(cookie)
-                                                    if cookie in list_cookie:
-                                                        list_cookie.remove(cookie)
+                                                    print(f'\033[1;31mCookie của {cam}{user[0]}{trang} đã die, chuyển sang cookie tiếp theo')
                                                     anorin = 2
                                                     break
                                                 else:
-                                                    print(f'Tài Khoản {cam}{user[0]}{trang} Đã Bị Chặn Tương Tác {lam}')
-                                                    mark_cookie_as_die(cookie)
-                                                    if cookie in list_cookie:
-                                                        list_cookie.remove(cookie)
+                                                    print(f'\033[1;31mTài khoản {cam}{user[0]}{trang} bị chặn tương tác Like, chuyển sang cookie tiếp theo')
                                                     anorin = 2
                                                     break
                                             elif loi_like >= 4:
-                                                print(f'Tài Khoản {cam}{user[0]}{trang} Đã Bị Chặn Tương Tác')
-                                                mark_cookie_as_die(cookie)
-                                                if cookie in list_cookie:
-                                                    list_cookie.remove(cookie)
+                                                print(f'\033[1;31mTài khoản {cam}{user[0]}{trang} bị chặn tương tác Like sau 4 lỗi, chuyển sang cookie tiếp theo')
                                                 anorin = 2
                                                 break
                                             elif lam == '2':
@@ -1111,7 +843,6 @@ try:
                         if anorin == 1 or anorin == 2:
                             break
                         
-                        # Follow tasks
                         if '2' in chon:
                             try:
                                 get_sub = get_nv('/subcheo', ckvp)
@@ -1128,7 +859,6 @@ try:
                                     
                                     for x in get_sub:
                                         try:
-                                            # Kiểm tra dữ liệu nhiệm vụ
                                             if not isinstance(x, dict) or 'soID' not in x:
                                                 print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
                                                 continue
@@ -1139,24 +869,16 @@ try:
                                             
                                             if lam == '1':
                                                 if user[0] == 'die':
-                                                    print(f'Cookie Instagram Die ! ! !!  ')
-                                                    mark_cookie_as_die(cookie)
-                                                    if cookie in list_cookie:
-                                                        list_cookie.remove(cookie)
+                                                    print(f'\033[1;31mCookie của {cam}{user[0]}{trang} đã die, chuyển sang cookie tiếp theo')
                                                 else:
-                                                    print(f'Tài Khoản {cam}{user[0]}{trang} Đã Bị Chặn Tương Tác {lam}')
-                                                    mark_cookie_as_die(cookie)
-                                                    if cookie in list_cookie:
-                                                        list_cookie.remove(cookie)
+                                                    print(f'\033[1;31mTài khoản {cam}{user[0]}{trang} bị chặn tương tác Follow, chuyển sang cookie tiếp theo')
                                                 
                                                 anorin = 2
                                                 break
                                             
-                                            # Tăng số lượng follow và lưu lại
                                             follow_count += 1
                                             update_follow_count(id_ig, follow_count)
                                             
-                                            # Lưu ID vào file để nhận tiền
                                             with open(f"{id_ig}.txt", "a+") as data_id:
                                                 data_id.write(str(id) + ',')
                                             
@@ -1164,17 +886,14 @@ try:
                                             tg = datetime.now().strftime('%H:%M')
                                             print(f'[{dem}] | {tg} | FOLLOW | {id} | SUCCESS | {cam}{user[0]}{trang} | Tổng: {follow_count}')
                                             
-                                            # Nếu đủ 6 job follow thì nhận tiền
                                             if follow_count % 6 == 0:
                                                 try:
-                                                    # Kiểm tra file trước khi đọc
                                                     if not os.path.exists(f"{id_ig}.txt"):
                                                         print(f"\033[1;31mFile {id_ig}.txt không tồn tại")
                                                         with open(f"{id_ig}.txt", "w") as f:
                                                             f.write('')
                                                         continue
                                                         
-                                                    # Đọc an toàn
                                                     with open(f"{id_ig}.txt", "r") as data_id:
                                                         list_data = data_id.read()
                                                         
@@ -1189,8 +908,6 @@ try:
                                                         job = xu_them // 600
                                                         xu = coin(ckvp)
                                                         print(f'Nhận Thành Công {job} Nhiệm Vụ Follow | +{xu_them} | {xu} | {cam}{user[0]}{trang}')
-                                                        
-                                                        # Reset file ID đã follow sau khi nhận tiền
                                                         os.remove(f"{id_ig}.txt")
                                                         with open(f"{id_ig}.txt", "w") as f:
                                                             f.write('')
@@ -1217,7 +934,6 @@ try:
                         if anorin == 1 or anorin == 2:
                             break
                         
-                        # Comment tasks
                         if '3' in chon:
                             try:
                                 get_cmt = get_nv('/cmtcheo', ckvp)
@@ -1234,7 +950,6 @@ try:
                                     
                                     for x in get_cmt:
                                         try:
-                                            # Kiểm tra dữ liệu nhiệm vụ
                                             if not isinstance(x, dict) or 'link' not in x or 'idpost' not in x or 'nd' not in x:
                                                 print('\033[1;31mThiếu dữ liệu trong nhiệm vụ comment')
                                                 continue
@@ -1257,24 +972,15 @@ try:
                                             if lam == '1':
                                                 user = name(cookie)
                                                 if user[0] == 'die':
-                                                    print('Cookie Instagram Die ! ! !! ')
-                                                    mark_cookie_as_die(cookie)
-                                                    if cookie in list_cookie:
-                                                        list_cookie.remove(cookie)
+                                                    print(f'\033[1;31mCookie của {cam}{user[0]}{trang} đã die, chuyển sang cookie tiếp theo')
                                                     anorin = 2
                                                     break
                                                 else:
-                                                    print(f'Tài Khoản {cam}{user[0]}{trang} Đã Bị Chặn Tương Tác ')
-                                                    mark_cookie_as_die(cookie)
-                                                    if cookie in list_cookie:
-                                                        list_cookie.remove(cookie)
+                                                    print(f'\033[1;31mTài khoản {cam}{user[0]}{trang} bị chặn tương tác Comment, chuyển sang cookie tiếp theo')
                                                     anorin = 2
                                                     break
                                             elif loi_cmt >= 4:
-                                                print(f'Tài Khoản {cam}{user[0]}{trang} Đã Bị Chặn Tương Tác')
-                                                mark_cookie_as_die(cookie)
-                                                if cookie in list_cookie:
-                                                    list_cookie.remove(cookie)
+                                                print(f'\033[1;31mTài khoản {cam}{user[0]}{trang} bị chặn tương tác Comment sau 4 lỗi, chuyển sang cookie tiếp theo')
                                                 anorin = 2
                                                 break
                                             elif lam == 'ok':
@@ -1326,7 +1032,7 @@ try:
         except Exception as e:
             print(f'\033[1;31mLỗi không mong muốn: {e}')
             traceback.print_exc()
-            delay(3)  # Giảm delay khi có lỗi
+            delay(3)
 
 except Exception as e:
     print(f"\033[1;31mLỗi chương trình nghiêm trọng: {e}")
