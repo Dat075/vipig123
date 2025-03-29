@@ -8,7 +8,7 @@ import shutil
 import traceback
 
 # Thông tin phiên bản của tool
-VERSION = "1.0.1"
+VERSION = "1.2"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
