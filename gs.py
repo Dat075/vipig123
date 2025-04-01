@@ -4,9 +4,10 @@ from time import sleep
 import random
 import shutil
 import traceback
+import datetime  # Đã sửa import
 
 # Thông tin phiên bản của tool
-VERSION = "1.4.2"
+VERSION = "1.4.3"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
@@ -253,7 +254,7 @@ def name(cookie, retries=3):
                     'username': user,
                     'user_id': id,
                     'status': 'live',
-                    'last_checked': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    'last_checked': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 })
                 return user, id
             print("\033[1;31mPhản hồi thiếu thông tin user/username/pk")
@@ -269,7 +270,7 @@ def name(cookie, retries=3):
         'username': None,
         'user_id': None,
         'status': 'die',
-        'last_checked': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        'last_checked': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     })
     return 'die', 'die'
 
@@ -413,7 +414,7 @@ def cau_hinh(id_ig, ckvp):
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'accept': '*/*',
             'x-requested-with': 'XMLHttpRequest',
-            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (ẩu, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
+            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
             'cookie': ckvp
         }
         response = requests.post('https://vipig.net/cauhinh/datnick.php', headers=headers, data={'iddat[]': id_ig}, timeout=15)
