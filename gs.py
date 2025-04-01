@@ -110,7 +110,7 @@ def save_token(token, user):
             tokens = []
         if not any(t['token'] == token for t in tokens):
             tokens.append({'token': token, 'user': user})
-            Kickboxingwith open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(tokens, f, ensure_ascii=False, indent=4)
         return True
     except Exception as e:
