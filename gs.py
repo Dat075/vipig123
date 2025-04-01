@@ -359,16 +359,43 @@ def get_id(link, cookie=None):
 def follow(id, cookie):
     try:
         headers = {
-            "x-ig-app-id": "1217981644879628",
+            "authority": "i.instagram.com",
+            "method": "POST",
+            "path": f"/web/friendships/{id}/follow/",
+            "scheme": "https",
             "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": "en-US,en;q=0.9",
             "content-type": "application/x-www-form-urlencoded",
-            "user-agent": "Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36",
+            "origin": "https://www.instagram.com",
+            "referer": "https://www.instagram.com/",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "x-asbd-id": "198387",  # Giá trị có thể thay đổi tùy vào phiên bản
             "x-csrftoken": cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else "",
+            "x-ig-app-id": "1217981644879628",
+            "x-ig-www-claim": "0",  # Có thể thay đổi nếu bị lỗi
+            "x-instagram-ajax": "1007868391",  # Có thể cần cập nhật
             "x-requested-with": "XMLHttpRequest",
+            "user-agent": "Instagram 289.0.0.77.109 Android (30/11; 480dpi; 1080x1920; vivo; 1904; 1904; qcom; en_US; 482299809)", 
             "cookie": cookie
         }
-        response = requests.post(f"https://i.instagram.com/web/friendships/{id}/follow/", headers=headers, timeout=15)
+
+        data = {
+            "user_id": id,
+            "radio_type": "wifi-none",
+        }
+
+        response = requests.post(
+            f"https://i.instagram.com/api/v1/web/friendships/{id}/follow/",
+            headers=headers,
+            data=data,
+            timeout=15
+        )
+        
         response.raise_for_status()
+        
         return response.text if 'ok' in response.text.lower() else '1'
     except Exception as e:
         print(f"\033[1;31mLỗi trong quá trình follow: {e}")
