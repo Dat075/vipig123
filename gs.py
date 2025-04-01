@@ -8,7 +8,7 @@ import shutil
 import traceback
 
 # Thông tin phiên bản của tool
-VERSION = "1.3"  # Tăng phiên bản để đánh dấu cập nhật
+VERSION = "1.4"  # Tăng phiên bản để đánh dấu cập nhật
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
@@ -17,7 +17,7 @@ def check_for_updates():
     try:
         print("\033[1;33mĐang kiểm tra cập nhật...")
         response = requests.get(GITHUB_VERSION_URL, timeout=10)
-        response.raise_for_status()  # Kiểm tra lỗi HTTP
+        response.raise_for_status()
         latest_version = response.text.strip()
         return latest_version if latest_version != VERSION else None
     except Exception as e:
@@ -99,6 +99,35 @@ def cookie(token):
         print(f"\033[1;31mLỗi khi lấy cookie: {e}")
         return None
 
+def save_token(token, user):
+    try:
+        file_path = 'tokens.json'
+        tokens = []
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
+                tokens = json.load(f)
+        if not isinstance(tokens, list):
+            tokens = []
+        if not any(t['token'] == token for t in tokens):
+            tokens.append({'token': token, 'user': user})
+            Kickboxingwith open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(tokens, f, ensure_ascii=False, indent=4)
+        return True
+    except Exception as e:
+        print(f"\033[1;31mLỗi khi lưu token: {e}")
+        return False
+
+def load_tokens():
+    try:
+        file_path = 'tokens.json'
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return []
+    except Exception as e:
+        print(f"\033[1;31mLỗi khi đọc file token: {e}")
+        return []
+
 def get_nv(type, ckvp):
     try:
         headers = {
@@ -151,22 +180,22 @@ def nhan_sub(list, ckvp):
 
 def delay(dl):
     try:
-        actual_delay = max(1, dl // 2)
-        for i in range(actual_delay, -1, -1):
+        # Không chia đôi nữa, sử dụng đúng giá trị delay người dùng nhập
+        for i in range(dl, -1, -1):
             print(f'[AN ORIN][{i} Giây]           ', end='\r')
-            sleep(0.8)
+            sleep(1)  # Delay chính xác 1 giây mỗi lần lặp
     except KeyboardInterrupt:
         print("\n\033[1;31mĐã dừng delay bởi người dùng")
     except Exception as e:
         print(f"\n\033[1;31mLỗi trong quá trình delay: {e}")
-        sleep(actual_delay)
+        sleep(dl)
 
 def delay_with_backoff(attempts, base_delay=5):
     try:
         delay_time = min(base_delay * (1.3 ** min(attempts, 5)), 30)
         for i in range(int(delay_time), -1, -1):
             print(f'[AN ORIN][Đang nghỉ {i} Giây để tránh block]           ', end='\r')
-            sleep(0.8)
+            sleep(1)
     except KeyboardInterrupt:
         print("\n\033[1;31mĐã dừng delay bởi người dùng")
     except Exception as e:
@@ -380,16 +409,6 @@ def cau_hinh(id_ig, ckvp):
         print(f"\033[1;31mLỗi trong quá trình cấu hình: {e}")
         return "error"
 
-def log_action(action_type, id, status, message=""):
-    try:
-        tg = datetime.now().strftime('%H:%M:%S')
-        log_entry = f"[{tg}] | {action_type} | {id} | {status}" + (f" | {message}" if message else "")
-        print(log_entry)
-        with open("vipig_log.txt", "a", encoding="utf-8") as f:
-            f.write(log_entry + "\n")
-    except Exception as e:
-        print(f"\033[1;31mLỗi khi ghi log: {e}")
-
 def get_follow_count(id_ig):
     try:
         if os.path.exists(f"{id_ig}_follow_count.txt"):
@@ -414,23 +433,54 @@ try:
     banner()
     check_update_on_startup()
     
-    while True:
-        token = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Access_Token Vipig:\033[1;33m ')
-        try:
+    tokens = load_tokens()
+    if tokens:
+        print("\033[1;33mDanh sách token đã lưu:")
+        for i, t in enumerate(tokens, 1):
+            print(f"{i}. {t['user']} - {t['token'][:10]}...")
+        choice = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mChọn token (nhập số) hoặc nhấn Enter để nhập token mới: \033[1;33m')
+        if choice.isdigit() and 1 <= int(choice) <= len(tokens):
+            token = tokens[int(choice) - 1]['token']
+            user = tokens[int(choice) - 1]['user']
+            xu = coin(cookie(token))
+            ckvp = cookie(token)
+            if ckvp:
+                print('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mĐăng Nhập Thành Công')
+            else:
+                print('\033[1;31mKhông thể lấy cookie từ token, vui lòng thử lại')
+                sys.exit()
+        else:
+            token = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Access_Token Vipig:\033[1;33m ')
             log = requests.post('https://vipig.net/logintoken.php', headers={'Content-type': 'application/x-www-form-urlencoded'}, data={'access_token': token}, timeout=15).json()
             if log.get('status') == 'success':
                 user = log['data']['user']
                 xu = log['data']['sodu']
                 ckvp = cookie(token)
                 if ckvp:
+                    save_token(token, user)
                     print('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mĐăng Nhập Thành Công')
-                    break
                 else:
-                    print('\033[1;31mKhông thể lấy cookie từ token, vui lòng thử lại')
+                    print('\033[1;31mKhông thể lấy cookie từ token')
+                    sys.exit()
             else:
                 print(log.get('mess', 'Đăng nhập thất bại'))
-        except Exception as e:
-            print(f'\033[1;31mLỗi khi đăng nhập: {e}')
+                sys.exit()
+    else:
+        token = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Access_Token Vipig:\033[1;33m ')
+        log = requests.post('https://vipig.net/logintoken.php', headers={'Content-type': 'application/x-www-form-urlencoded'}, data={'access_token': token}, timeout=15).json()
+        if log.get('status') == 'success':
+            user = log['data']['user']
+            xu = log['data']['sodu']
+            ckvp = cookie(token)
+            if ckvp:
+                save_token(token, user)
+                print('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mĐăng Nhập Thành Công')
+            else:
+                print('\033[1;31mKhông thể lấy cookie từ token')
+                sys.exit()
+        else:
+            print(log.get('mess', 'Đăng nhập thất bại'))
+            sys.exit()
     
     bongoc(14)
     list_cookie = []
@@ -495,7 +545,7 @@ try:
 \033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mCó Thể Chọn Nhiều Nhiệm Vụ \033[1;33m(Ví Dụ 123)""")
     chon = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Số Để Chạy Nhiệm Vụ:\033[1;33m ')
     bongoc(14)
-    dl = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Delay:\033[1;33m '))
+    dl = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Delay (giây):\033[1;33m '))
     chong_block = int(input('Sau bao nhiêu nhiệm vụ thì kích hoạt chống block: '))
     delay_block = int(input(f'Sau {chong_block} nhiệm vụ nghỉ ngơi bao nhiêu giây: '))
     doi_acc = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mSau bao nhiêu nhiệm vụ thì đổi nick:\033[1;33m '))
@@ -512,7 +562,7 @@ try:
                     break
                 ten = name(cookie_input)
                 if ten[0] != 'die':
-                    print(f'User competitors: {cam}{ten[0]}{trang} ')
+                    print(f'User Instagram: {cam}{ten[0]}{trang} ')
                     list_cookie.append(cookie_input)
                     save_cookie_to_txt(cookie_input)
                     bongoc(14)
@@ -524,17 +574,17 @@ try:
         
         for i, cookie in enumerate(list_cookie):
             anorin = 0
-            user, id_ig = name(cookie)
-            if user == 'die':
-                print(f'\033[1;31mCookie của {cam}{user}{trang} đã die, chuyển sang cookie tiếp theo')
+            user_ig, id_ig = name(cookie)
+            if user_ig == 'die':
+                print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die, chuyển sang cookie tiếp theo')
                 continue
             ngoc = cau_hinh(id_ig, ckvp)
             if ngoc == '1':
                 bongoc(14)
-                print(f'Đang cấu hình ID: {id_ig} | User: {cam}{user}{trang}')
+                print(f'Đang cấu hình ID: {id_ig} | User: {cam}{user_ig}{trang}')
                 bongoc(14)
             else:
-                print(f'Cấu hình thất bại ID: {id_ig} | User: {cam}{user}{trang} ')
+                print(f'Cấu hình thất bại ID: {id_ig} | User: {cam}{user_ig}{trang} ')
                 delay(2)
                 continue
             
@@ -565,12 +615,12 @@ try:
                                 continue
                             lam = like(id, cookie)
                             if lam == '1':
-                                user, _ = name(cookie)
-                                if user == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user}{trang} đã die')
+                                user_ig, _ = name(cookie)
+                                if user_ig == 'die':
+                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
                                     anorin = 2
                                     break
-                                print(f'\033[1;31mTài khoản {cam}{user}{trang} bị chặn Like')
+                                print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Like')
                                 anorin = 2
                                 break
                             nhan = nhan_tien(uid, ckvp, '')
@@ -578,7 +628,8 @@ try:
                                 xu = coin(ckvp)
                                 dem += 1
                                 tg = datetime.now().strftime('%H:%M')
-                                print(f'[{dem}] | {tg} | LIKE | {id} | +300 | {xu} | {cam}{user}{trang}')
+                                # Bỏ ID Instagram sau số xu
+                                print(f'[{dem}] | {tg} | LIKE | {id} | +300 | {xu}')
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
@@ -588,7 +639,7 @@ try:
                                     break
                             else:
                                 tg = datetime.now().strftime('%H:%M')
-                                print(f'[X] | {tg} | LIKE | {id} | ERROR | {cam}{user}{trang}')
+                                print(f'[X] | {tg} | LIKE | {id} | ERROR')
                                 delay(dl)
                 
                 if anorin in (1, 2):
@@ -611,11 +662,11 @@ try:
                             id = x['soID']
                             lam = follow(id, cookie)
                             if lam == '1':
-                                user, _ = name(cookie)
-                                if user == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user}{trang} đã die')
+                                user_ig, _ = name(cookie)
+                                if user_ig == 'die':
+                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
                                 else:
-                                    print(f'\033[1;31mTài khoản {cam}{user}{trang} bị chặn Follow')
+                                    print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Follow')
                                 anorin = 2
                                 break
                             follow_count += 1
@@ -624,7 +675,7 @@ try:
                                 data_id.write(f"{id},")
                             dem += 1
                             tg = datetime.now().strftime('%H:%M')
-                            print(f'[{dem}] | {tg} | FOLLOW | {id} | SUCCESS | {cam}{user}{trang} | Tổng: {follow_count}')
+                            print(f'[{dem}] | {tg} | FOLLOW | {id} | SUCCESS | Tổng: {follow_count}')
                             if follow_count % 6 == 0:
                                 with open(f"{id_ig}.txt", "r") as data_id:
                                     list_data = data_id.read()
@@ -634,7 +685,8 @@ try:
                                         xu_them = nhan.get('sodu', 0)
                                         job = xu_them // 600
                                         xu = coin(ckvp)
-                                        print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu} | {cam}{user}{trang}')
+                                        # Bỏ ID Instagram sau số xu
+                                        print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
                                         os.remove(f"{id_ig}.txt")
                                         open(f"{id_ig}.txt", "w").close()
                             if dem % chong_block == 0:
@@ -670,12 +722,12 @@ try:
                                 continue
                             lam = cmt(msg, id, cookie)
                             if lam == '1':
-                                user, _ = name(cookie)
-                                if user == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user}{trang} đã die')
+                                user_ig, _ = name(cookie)
+                                if user_ig == 'die':
+                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
                                     anorin = 2
                                     break
-                                print(f'\033[1;31mTài khoản {cam}{user}{trang} bị chặn Comment')
+                                print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Comment')
                                 anorin = 2
                                 break
                             nhan = nhan_tien(uid, ckvp, '/cmtcheo')
@@ -683,7 +735,8 @@ try:
                                 xu = coin(ckvp)
                                 dem += 1
                                 tg = datetime.now().strftime('%H:%M')
-                                print(f'[{dem}] | {tg} | COMMENT | {id} | {msg} | +600 | {xu} | {cam}{user}{trang}')
+                                # Bỏ ID Instagram sau số xu
+                                print(f'[{dem}] | {tg} | COMMENT | {id} | {msg} | +600 | {xu}')
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
@@ -693,7 +746,7 @@ try:
                                     break
                             else:
                                 tg = datetime.now().strftime('%H:%M')
-                                print(f'[X] | {tg} | COMMENT | {id} | ERROR | {cam}{user}{trang}')
+                                print(f'[X] | {tg} | COMMENT | {id} | ERROR')
                                 delay(dl)
 except KeyboardInterrupt:
     print("\n\033[1;31mĐã dừng chương trình theo yêu cầu người dùng")
