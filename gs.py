@@ -307,16 +307,23 @@ def like(id, cookie):
         print(f"\033[1;31mLỗi trong quá trình like: {e}")
         return '1'
 
-def get_id(link, cookie=None):  # Cookie không cần thiết nữa nhưng giữ để tương thích
+def get_id(link, cookie=None):
     """Chuyển đổi shortcode từ URL Instagram thành media ID."""
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
     try:
-        shortcode = re.search(r'/p/([^/]+)/', link).group(1)
+        match = re.search(r'/p/([A-Za-z0-9_-]+)', link)
+        if not match:
+            print(f"\033[1;31mKhông tìm thấy shortcode trong URL: {link}")
+            return False
+        shortcode = match.group(1)
         media_id = 0
         for char in shortcode:
+            if char not in alphabet:
+                print(f"\033[1;31mKý tự không hợp lệ trong shortcode: {char} | URL: {link}")
+                return False
             media_id = (media_id * 64) + alphabet.index(char)
         return str(media_id)
-    except (AttributeError, IndexError, ValueError) as e:
+    except Exception as e:
         print(f"\033[1;31mLỗi khi trích xuất ID từ URL: {e} | URL: {link}")
         return False
 
