@@ -1,14 +1,12 @@
 import json
 import requests, os, sys, re
 from time import sleep
-from datetime import datetime
 import random
-import time
 import shutil
 import traceback
 
 # Thông tin phiên bản của tool
-VERSION = "1.4.1"  # Tăng phiên bản để đánh dấu cập nhật
+VERSION = "1.4"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
@@ -180,10 +178,9 @@ def nhan_sub(list, ckvp):
 
 def delay(dl):
     try:
-        # Không chia đôi nữa, sử dụng đúng giá trị delay người dùng nhập
         for i in range(dl, -1, -1):
             print(f'[AN ORIN][{i} Giây]           ', end='\r')
-            sleep(1)  # Delay chính xác 1 giây mỗi lần lặp
+            sleep(1)
     except KeyboardInterrupt:
         print("\n\033[1;31mĐã dừng delay bởi người dùng")
     except Exception as e:
@@ -337,7 +334,6 @@ def like(id, cookie):
         return '1'
 
 def get_id(link, cookie=None):
-    """Chuyển đổi shortcode từ URL Instagram thành media ID."""
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
     try:
         match = re.search(r'/p/([A-Za-z0-9_-]+)', link)
@@ -372,30 +368,21 @@ def follow(id, cookie):
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
-            "x-asbd-id": "198387",  # Giá trị có thể thay đổi tùy vào phiên bản
+            "x-asbd-id": "198387",
             "x-csrftoken": cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else "",
             "x-ig-app-id": "1217981644879628",
-            "x-ig-www-claim": "0",  # Có thể thay đổi nếu bị lỗi
-            "x-instagram-ajax": "1007868391",  # Có thể cần cập nhật
+            "x-ig-www-claim": "0",
+            "x-instagram-ajax": "1007868391",
             "x-requested-with": "XMLHttpRequest",
-            "user-agent": "Instagram 289.0.0.77.109 Android (30/11; 480dpi; 1080x1920; vivo; 1904; 1904; qcom; en_US; 482299809)", 
+            "user-agent": "Instagram 289.0.0.77.109 Android (30/11; 480dpi; 1080x1920; vivo; 1904; 1904; qcom; en_US; 482299809)",
             "cookie": cookie
         }
-
         data = {
             "user_id": id,
             "radio_type": "wifi-none",
         }
-
-        response = requests.post(
-            f"https://i.instagram.com/api/v1/web/friendships/{id}/follow/",
-            headers=headers,
-            data=data,
-            timeout=15
-        )
-        
+        response = requests.post(f"https://i.instagram.com/api/v1/web/friendships/{id}/follow/", headers=headers, data=data, timeout=15)
         response.raise_for_status()
-        
         return response.text if 'ok' in response.text.lower() else '1'
     except Exception as e:
         print(f"\033[1;31mLỗi trong quá trình follow: {e}")
@@ -426,7 +413,7 @@ def cau_hinh(id_ig, ckvp):
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'accept': '*/*',
             'x-requested-with': 'XMLHttpRequest',
-            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
+            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (ẩu, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
             'cookie': ckvp
         }
         response = requests.post('https://vipig.net/cauhinh/datnick.php', headers=headers, data={'iddat[]': id_ig}, timeout=15)
@@ -435,25 +422,6 @@ def cau_hinh(id_ig, ckvp):
     except Exception as e:
         print(f"\033[1;31mLỗi trong quá trình cấu hình: {e}")
         return "error"
-
-def get_follow_count(id_ig):
-    try:
-        if os.path.exists(f"{id_ig}_follow_count.txt"):
-            with open(f"{id_ig}_follow_count.txt", "r") as f:
-                return int(f.read().strip() or 0)
-        return 0
-    except Exception as e:
-        print(f"\033[1;31mLỗi khi đọc số lượng follow: {e}")
-        return 0
-
-def update_follow_count(id_ig, count):
-    try:
-        with open(f"{id_ig}_follow_count.txt", "w") as f:
-            f.write(str(count))
-        return True
-    except Exception as e:
-        print(f"\033[1;31mLỗi khi cập nhật số lượng follow: {e}")
-        return False
 
 try:
     os.system("cls" if os.name == "nt" else "clear")
@@ -577,6 +545,9 @@ try:
     delay_block = int(input(f'Sau {chong_block} nhiệm vụ nghỉ ngơi bao nhiêu giây: '))
     doi_acc = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mSau bao nhiêu nhiệm vụ thì đổi nick:\033[1;33m '))
     
+    # Thêm tập hợp để theo dõi các job đã làm
+    done_jobs = set()
+
     while True:
         if not list_cookie:
             print('\033[1;31mToàn bộ cookie đã hết hạn! Vui lòng nhập lại.')
@@ -615,8 +586,6 @@ try:
                 delay(2)
                 continue
             
-            follow_count = get_follow_count(id_ig)
-            
             while True:
                 if anorin in (1, 2):
                     break
@@ -640,6 +609,9 @@ try:
                             id = get_id(link)
                             if not id:
                                 continue
+                            if uid in done_jobs:
+                                print(f'[{dem}] | LIKE | {id} | TRÙNG JOB')
+                                continue
                             lam = like(id, cookie)
                             if lam == '1':
                                 user_ig, _ = name(cookie)
@@ -654,9 +626,8 @@ try:
                             if 'mess' in nhan:
                                 xu = coin(ckvp)
                                 dem += 1
-                                tg = datetime.now().strftime('%H:%M')
-                                # Bỏ ID Instagram sau số xu
-                                print(f'[{dem}] | {tg} | LIKE | {id} | +300 | {xu}')
+                                print(f'[{dem}] | LIKE | {id} | +300 | {xu}')
+                                done_jobs.add(uid)
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
@@ -665,8 +636,7 @@ try:
                                     anorin = 1
                                     break
                             else:
-                                tg = datetime.now().strftime('%H:%M')
-                                print(f'[X] | {tg} | LIKE | {id} | ERROR')
+                                print(f'[{dem}] | LIKE | {id} | ERROR')
                                 delay(dl)
                 
                 if anorin in (1, 2):
@@ -687,6 +657,9 @@ try:
                                 print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
                                 continue
                             id = x['soID']
+                            if id in done_jobs:
+                                print(f'[{dem}] | FOLLOW | {id} | TRÙNG JOB')
+                                continue
                             lam = follow(id, cookie)
                             if lam == '1':
                                 user_ig, _ = name(cookie)
@@ -696,26 +669,22 @@ try:
                                     print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Follow')
                                 anorin = 2
                                 break
-                            follow_count += 1
-                            update_follow_count(id_ig, follow_count)
                             with open(f"{id_ig}.txt", "a+") as data_id:
                                 data_id.write(f"{id},")
                             dem += 1
-                            tg = datetime.now().strftime('%H:%M')
-                            print(f'[{dem}] | {tg} | FOLLOW | {id} | SUCCESS | Tổng: {follow_count}')
-                            if follow_count % 6 == 0:
-                                with open(f"{id_ig}.txt", "r") as data_id:
-                                    list_data = data_id.read()
-                                if list_data:
-                                    nhan = nhan_sub(list_data, ckvp)
-                                    if 'error' not in nhan:
-                                        xu_them = nhan.get('sodu', 0)
-                                        job = xu_them // 600
-                                        xu = coin(ckvp)
-                                        # Bỏ ID Instagram sau số xu
-                                        print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
-                                        os.remove(f"{id_ig}.txt")
-                                        open(f"{id_ig}.txt", "w").close()
+                            print(f'[{dem}] | FOLLOW | {id} | SUCCESS')
+                            done_jobs.add(id)
+                            with open(f"{id_ig}.txt", "r") as data_id:
+                                list_data = data_id.read()
+                            if list_data:
+                                nhan = nhan_sub(list_data, ckvp)
+                                if 'error' not in nhan:
+                                    xu_them = nhan.get('sodu', 0)
+                                    job = xu_them // 600
+                                    xu = coin(ckvp)
+                                    print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
+                                    os.remove(f"{id_ig}.txt")
+                                    open(f"{id_ig}.txt", "w").close()
                             if dem % chong_block == 0:
                                 delay(delay_block)
                             else:
@@ -747,6 +716,9 @@ try:
                             id = get_id(link)
                             if not id:
                                 continue
+                            if uid in done_jobs:
+                                print(f'[{dem}] | COMMENT | {id} | TRÙNG JOB')
+                                continue
                             lam = cmt(msg, id, cookie)
                             if lam == '1':
                                 user_ig, _ = name(cookie)
@@ -761,9 +733,8 @@ try:
                             if 'mess' in nhan:
                                 xu = coin(ckvp)
                                 dem += 1
-                                tg = datetime.now().strftime('%H:%M')
-                                # Bỏ ID Instagram sau số xu
-                                print(f'[{dem}] | {tg} | COMMENT | {id} | {msg} | +600 | {xu}')
+                                print(f'[{dem}] | COMMENT | {id} | {msg} | +600 | {xu}')
+                                done_jobs.add(uid)
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
@@ -772,9 +743,9 @@ try:
                                     anorin = 1
                                     break
                             else:
-                                tg = datetime.now().strftime('%H:%M')
-                                print(f'[X] | {tg} | COMMENT | {id} | ERROR')
+                                print(f'[{dem}] | COMMENT | {id} | ERROR')
                                 delay(dl)
+
 except KeyboardInterrupt:
     print("\n\033[1;31mĐã dừng chương trình theo yêu cầu người dùng")
 except Exception as e:
