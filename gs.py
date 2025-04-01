@@ -7,7 +7,7 @@ import traceback
 import datetime  # Đã sửa import
 
 # Thông tin phiên bản của tool
-VERSION = "1.4.3"
+VERSION = "1.4.4"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
@@ -546,8 +546,8 @@ try:
     delay_block = int(input(f'Sau {chong_block} nhiệm vụ nghỉ ngơi bao nhiêu giây: '))
     doi_acc = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mSau bao nhiêu nhiệm vụ thì đổi nick:\033[1;33m '))
     
-    # Thêm tập hợp để theo dõi các job đã làm
-    done_jobs = set()
+    # Thay done_jobs từ set thành dict để lưu job đã làm cho từng acc
+    done_jobs = {}  # Key là id_ig, value là set các job đã làm của acc đó
 
     while True:
         if not list_cookie:
@@ -587,6 +587,10 @@ try:
                 delay(2)
                 continue
             
+            # Khởi tạo tập hợp done_jobs cho acc nếu chưa có
+            if id_ig not in done_jobs:
+                done_jobs[id_ig] = set()
+
             while True:
                 if anorin in (1, 2):
                     break
@@ -610,7 +614,7 @@ try:
                             id = get_id(link)
                             if not id:
                                 continue
-                            if uid in done_jobs:
+                            if uid in done_jobs[id_ig]:  # Chỉ kiểm tra job trùng với acc hiện tại
                                 print(f'[{dem}] | LIKE | {id} | TRÙNG JOB')
                                 continue
                             lam = like(id, cookie)
@@ -628,7 +632,7 @@ try:
                                 xu = coin(ckvp)
                                 dem += 1
                                 print(f'[{dem}] | LIKE | {id} | +300 | {xu}')
-                                done_jobs.add(uid)
+                                done_jobs[id_ig].add(uid)  # Thêm job vào tập hợp của acc hiện tại
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
@@ -658,7 +662,7 @@ try:
                                 print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
                                 continue
                             id = x['soID']
-                            if id in done_jobs:
+                            if id in done_jobs[id_ig]:  # Chỉ kiểm tra job trùng với acc hiện tại
                                 print(f'[{dem}] | FOLLOW | {id} | TRÙNG JOB')
                                 continue
                             lam = follow(id, cookie)
@@ -674,7 +678,7 @@ try:
                                 data_id.write(f"{id},")
                             dem += 1
                             print(f'[{dem}] | FOLLOW | {id} | SUCCESS')
-                            done_jobs.add(id)
+                            done_jobs[id_ig].add(id)  # Thêm job vào tập hợp của acc hiện tại
                             with open(f"{id_ig}.txt", "r") as data_id:
                                 list_data = data_id.read()
                             if list_data:
@@ -717,7 +721,7 @@ try:
                             id = get_id(link)
                             if not id:
                                 continue
-                            if uid in done_jobs:
+                            if uid in done_jobs[id_ig]:  # Chỉ kiểm tra job trùng với acc hiện tại
                                 print(f'[{dem}] | COMMENT | {id} | TRÙNG JOB')
                                 continue
                             lam = cmt(msg, id, cookie)
@@ -735,7 +739,7 @@ try:
                                 xu = coin(ckvp)
                                 dem += 1
                                 print(f'[{dem}] | COMMENT | {id} | {msg} | +600 | {xu}')
-                                done_jobs.add(uid)
+                                done_jobs[id_ig].add(uid)  # Thêm job vào tập hợp của acc hiện tại
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
