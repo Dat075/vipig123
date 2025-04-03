@@ -329,11 +329,16 @@ def like(id, cookie):
         }
         response = requests.post(f'https://www.instagram.com/web/likes/{id}/like/', headers=headers, timeout=15)
         response.raise_for_status()
-        return '2' if 'ok' in response.text.lower() else '1'
-    except Exception as e:
+        if 'ok' in response.text.lower():
+            return '2'  # Like thành công
+        elif 'post_not_found' in response.text.lower() or response.status_code == 404:
+            return '0'  # Job không tồn tại
+        return '1'  # Bị block hoặc lỗi khác
+    except requests.exceptions.RequestException as e:
+        if hasattr(e.response, 'status_code') and e.response.status_code == 404:
+            return '0'  # Job không tồn tại
         print(f"\033[1;31mLỗi trong quá trình like: {e}")
-        return '1'
-
+        return '1'  # Lỗi mạng hoặc block
 def get_id(link, cookie=None):
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
     try:
@@ -353,29 +358,17 @@ def get_id(link, cookie=None):
         print(f"\033[1;31mLỗi khi trích xuất ID từ URL: {e} | URL: {link}")
         return False
 
+# Hàm follow đã chỉnh sửa
 def follow(id, cookie):
     try:
         headers = {
             "authority": "i.instagram.com",
-            "method": "POST",
-            "path": f"/web/friendships/{id}/follow/",
-            "scheme": "https",
             "accept": "*/*",
-            "accept-encoding": "gzip, deflate, br",
-            "accept-language": "en-US,en;q=0.9",
             "content-type": "application/x-www-form-urlencoded",
-            "origin": "https://www.instagram.com",
-            "referer": "https://www.instagram.com/",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-origin",
-            "x-asbd-id": "198387",
+            "user-agent": "Instagram 289.0.0.77.109 Android (30/11; 480dpi; 1080x1920; vivo; 1904; 1904; qcom; en_US; 482299809)",
             "x-csrftoken": cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else "",
             "x-ig-app-id": "1217981644879628",
-            "x-ig-www-claim": "0",
-            "x-instagram-ajax": "1007868391",
             "x-requested-with": "XMLHttpRequest",
-            "user-agent": "Instagram 289.0.0.77.109 Android (30/11; 480dpi; 1080x1920; vivo; 1904; 1904; qcom; en_US; 482299809)",
             "cookie": cookie
         }
         data = {
@@ -384,11 +377,18 @@ def follow(id, cookie):
         }
         response = requests.post(f"https://i.instagram.com/api/v1/web/friendships/{id}/follow/", headers=headers, data=data, timeout=15)
         response.raise_for_status()
-        return response.text if 'ok' in response.text.lower() else '1'
-    except Exception as e:
+        if 'ok' in response.text.lower():
+            return '2'  # Follow thành công
+        elif 'user_not_found' in response.text.lower() or response.status_code == 404:
+            return '0'  # Job không tồn tại
+        return '1'  # Bị block hoặc lỗi khác
+    except requests.exceptions.RequestException as e:
+        if hasattr(e.response, 'status_code') and e.response.status_code == 404:
+            return '0'  # Job không tồn tại
         print(f"\033[1;31mLỗi trong quá trình follow: {e}")
-        return '1'
+        return '1'  # Lỗi mạng hoặc block
 
+# Hàm cmt giữ nguyên nhưng không sử dụng
 def cmt(msg, id, cookie):
     try:
         headers = {
@@ -537,8 +537,7 @@ try:
     bongoc(14)
     print("""\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập [1] Để Chạy Nhiệm Vụ Like
 \033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập [2] Để Chạy Nhiệm Vụ Follow
-\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập [3] Để Chạy Nhiệm Vụ Comment
-\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mCó Thể Chọn Nhiều Nhiệm Vụ \033[1;33m(Ví Dụ 123)""")
+\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mCó Thể Chọn Nhiều Nhiệm Vụ \033[1;33m(Ví Dụ 12)""")
     chon = input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Số Để Chạy Nhiệm Vụ:\033[1;33m ')
     bongoc(14)
     dl = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Delay (giây):\033[1;33m '))
@@ -549,7 +548,7 @@ try:
     # Thay done_jobs từ set thành dict để lưu job đã làm cho từng acc
     done_jobs = {}  # Key là id_ig, value là set các job đã làm của acc đó
 
-    while True:
+     while True:
         if not list_cookie:
             print('\033[1;31mToàn bộ cookie đã hết hạn! Vui lòng nhập lại.')
             clear_cookie_file()
@@ -587,7 +586,6 @@ try:
                 delay(2)
                 continue
             
-            # Khởi tạo tập hợp done_jobs cho acc nếu chưa có
             if id_ig not in done_jobs:
                 done_jobs[id_ig] = set()
 
@@ -614,11 +612,31 @@ try:
                             id = get_id(link)
                             if not id:
                                 continue
-                            if uid in done_jobs[id_ig]:  # Chỉ kiểm tra job trùng với acc hiện tại
+                            if uid in done_jobs[id_ig]:
                                 print(f'[{dem}] | LIKE | {id} | TRÙNG JOB')
                                 continue
                             lam = like(id, cookie)
-                            if lam == '1':
+                            if lam == '2':  # Like thành công
+                                nhan = nhan_tien(uid, ckvp, '')
+                                if 'mess' in nhan:
+                                    xu = coin(ckvp)
+                                    dem += 1
+                                    print(f'[{dem}] | LIKE | {id} | +300 | {xu}')
+                                    done_jobs[id_ig].add(uid)
+                                    if dem % chong_block == 0:
+                                        delay(delay_block)
+                                    else:
+                                        delay(dl)
+                                    if dem % doi_acc == 0:
+                                        anorin = 1
+                                        break
+                                else:
+                                    print(f'[{dem}] | LIKE | {id} | ERROR')
+                                    delay(dl)
+                            elif lam == '0':  # Job không tồn tại
+                                print(f'[{dem}] | LIKE | {id} | JOB KHÔNG TỒN TẠI')
+                                delay(dl)
+                            elif lam == '1':  # Bị block
                                 user_ig, _ = name(cookie)
                                 if user_ig == 'die':
                                     print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
@@ -627,22 +645,6 @@ try:
                                 print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Like')
                                 anorin = 2
                                 break
-                            nhan = nhan_tien(uid, ckvp, '')
-                            if 'mess' in nhan:
-                                xu = coin(ckvp)
-                                dem += 1
-                                print(f'[{dem}] | LIKE | {id} | +300 | {xu}')
-                                done_jobs[id_ig].add(uid)  # Thêm job vào tập hợp của acc hiện tại
-                                if dem % chong_block == 0:
-                                    delay(delay_block)
-                                else:
-                                    delay(dl)
-                                if dem % doi_acc == 0:
-                                    anorin = 1
-                                    break
-                            else:
-                                print(f'[{dem}] | LIKE | {id} | ERROR')
-                                delay(dl)
                 
                 if anorin in (1, 2):
                     break
@@ -662,84 +664,27 @@ try:
                                 print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
                                 continue
                             id = x['soID']
-                            if id in done_jobs[id_ig]:  # Chỉ kiểm tra job trùng với acc hiện tại
+                            if id in done_jobs[id_ig]:
                                 print(f'[{dem}] | FOLLOW | {id} | TRÙNG JOB')
                                 continue
                             lam = follow(id, cookie)
-                            if lam == '1':
-                                user_ig, _ = name(cookie)
-                                if user_ig == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
-                                else:
-                                    print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Follow')
-                                anorin = 2
-                                break
-                            with open(f"{id_ig}.txt", "a+") as data_id:
-                                data_id.write(f"{id},")
-                            dem += 1
-                            print(f'[{dem}] | FOLLOW | {id} | SUCCESS')
-                            done_jobs[id_ig].add(id)  # Thêm job vào tập hợp của acc hiện tại
-                            with open(f"{id_ig}.txt", "r") as data_id:
-                                list_data = data_id.read()
-                            if list_data:
-                                nhan = nhan_sub(list_data, ckvp)
-                                if 'error' not in nhan:
-                                    xu_them = nhan.get('sodu', 0)
-                                    job = xu_them // 600
-                                    xu = coin(ckvp)
-                                    print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
-                                    os.remove(f"{id_ig}.txt")
-                                    open(f"{id_ig}.txt", "w").close()
-                            if dem % chong_block == 0:
-                                delay(delay_block)
-                            else:
-                                delay(dl)
-                            if dem % doi_acc == 0:
-                                anorin = 1
-                                break
-                
-                if anorin in (1, 2):
-                    break
-                
-                if '3' in chon:  # Nhiệm vụ Comment
-                    get_cmt = get_nv('/cmtcheo', ckvp)
-                    if not isinstance(get_cmt, list):
-                        print('\033[1;31mPhản hồi từ API không phải danh sách nhiệm vụ')
-                        delay(2)
-                        continue
-                    if not get_cmt:
-                        print('Tạm thời hết nhiệm vụ Comment', '     ', end='\r')
-                    else:
-                        print(f'Tìm thấy {len(get_cmt)} nhiệm vụ Comment', '     ', end='\r')
-                        for x in get_cmt:
-                            if not isinstance(x, dict) or 'link' not in x or 'idpost' not in x or 'nd' not in x:
-                                print('\033[1;31mThiếu dữ liệu trong nhiệm vụ comment')
-                                continue
-                            link = x['link']
-                            uid = x['idpost']
-                            msg = random.choice(json.loads(x['nd']))
-                            id = get_id(link)
-                            if not id:
-                                continue
-                            if uid in done_jobs[id_ig]:  # Chỉ kiểm tra job trùng với acc hiện tại
-                                print(f'[{dem}] | COMMENT | {id} | TRÙNG JOB')
-                                continue
-                            lam = cmt(msg, id, cookie)
-                            if lam == '1':
-                                user_ig, _ = name(cookie)
-                                if user_ig == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
-                                    anorin = 2
-                                    break
-                                print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Comment')
-                                anorin = 2
-                                break
-                            nhan = nhan_tien(uid, ckvp, '/cmtcheo')
-                            if 'mess' in nhan:
-                                xu = coin(ckvp)
+                            if lam == '2':  # Follow thành công
+                                with open(f"{id_ig}.txt", "a+") as data_id:
+                                    data_id.write(f"{id},")
                                 dem += 1
-                                print(f'[{dem}] | COMMENT | {id} | {msg} | +600 | {xu}')
-                                done_jobs[id_ig].add(uid)  # Thêm job vào tập hợp của acc hiện tại
+                                print(f'[{dem}] | FOLLOW | {id} | SUCCESS')
+                                done_jobs[id_ig].add(id)
+                                with open(f"{id_ig}.txt", "r") as data_id:
+                                    list_data = data_id.read()
+                                if list_data:
+                                    nhan = nhan_sub(list_data, ckvp)
+                                    if 'error' not in nhan:
+                                        xu_them = nhan.get('sodu', 0)
+                                        job = xu_them // 600
+                                        xu = coin(ckvp)
+                                        print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
+                                        os.remove(f"{id_ig}.txt")
+                                        open(f"{id_ig}.txt", "w").close()
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
@@ -747,10 +692,17 @@ try:
                                 if dem % doi_acc == 0:
                                     anorin = 1
                                     break
-                            else:
-                                print(f'[{dem}] | COMMENT | {id} | ERROR')
+                            elif lam == '0':  # Job không tồn tại
+                                print(f'[{dem}] | FOLLOW | {id} | JOB KHÔNG TỒN TẠI')
                                 delay(dl)
-
+                            elif lam == '1':  # Bị block
+                                user_ig, _ = name(cookie)
+                                if user_ig == 'die':
+                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
+                                else:
+                                    print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Follow')
+                                anorin = 2
+                                break
 except KeyboardInterrupt:
     print("\n\033[1;31mĐã dừng chương trình theo yêu cầu người dùng")
 except Exception as e:
