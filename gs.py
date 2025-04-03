@@ -7,7 +7,7 @@ import traceback
 import datetime  # Đã sửa import
 
 # Thông tin phiên bản của tool
-VERSION = "1.4.4"
+VERSION = "1.4.5"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
