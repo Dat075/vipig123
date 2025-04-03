@@ -389,25 +389,6 @@ def follow(id, cookie):
         return '1'  # Lỗi mạng hoặc block
 
 # Hàm cmt giữ nguyên nhưng không sử dụng
-def cmt(msg, id, cookie):
-    try:
-        headers = {
-            "x-ig-app-id": "1217981644879628",
-            "accept": "*/*",
-            "content-type": "application/x-www-form-urlencoded",
-            "user-agent": "Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36",
-            "x-csrftoken": cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else "",
-            "x-requested-with": "XMLHttpRequest",
-            "cookie": cookie
-        }
-        response = requests.post(f'https://i.instagram.com/api/v1/web/comments/{id}/add/', headers=headers, data={'comment_text': msg}, timeout=15)
-        response.raise_for_status()
-        data = response.json()
-        return 'ok' if data.get('status') == 'ok' else '1'
-    except Exception as e:
-        print(f"\033[1;31mLỗi trong quá trình comment: {e}")
-        return '1'
-
 def cau_hinh(id_ig, ckvp):
     try:
         headers = {
@@ -548,7 +529,7 @@ try:
     # Thay done_jobs từ set thành dict để lưu job đã làm cho từng acc
     done_jobs = {}  # Key là id_ig, value là set các job đã làm của acc đó
 
-     while True:
+    while True:
         if not list_cookie:
             print('\033[1;31mToàn bộ cookie đã hết hạn! Vui lòng nhập lại.')
             clear_cookie_file()
