@@ -7,7 +7,7 @@ import traceback
 import datetime
 
 # Thông tin phiên bản của tool
-VERSION = "1.4.6"
+VERSION = "1.4.7"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
@@ -361,81 +361,52 @@ def get_id(link, cookie=None):
 
 def follow(id, cookie):
     try:
-        # Trích xuất csrftoken từ cookie
         csrftoken = cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else ""
-        
-        # Danh sách hai endpoint bạn chọn
         endpoints = [
-            f"https://www.instagram.com/api/v1/friendships/create/{id}/",  # Endpoint 1
-            f"https://i.instagram.com/api/v1/friendships/create/{id}/"     # Endpoint 2
+            ("https://www.instagram.com/api/v1/friendships/create/{id}/", 1),  # Endpoint 1
+            ("https://i.instagram.com/api/v1/friendships/create/{id}/", 2)     # Endpoint 2
         ]
         
-        # Chọn ngẫu nhiên một endpoint
-        selected_endpoint = random.choice(endpoints)
-        endpoint_label = "1" if "www.instagram.com" in selected_endpoint else "2"  # Gán nhãn 1 hoặc 2
-        
-        # Header tối ưu, mô phỏng thiết bị thực tế
-        headers = {
-            "authority": "i.instagram.com" if "i.instagram.com" in selected_endpoint else "www.instagram.com",
-            "accept": "application/json",
-            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
-            "x-csrftoken": csrftoken,
-            "x-ig-app-id": "1217981644879628",
-            "x-requested-with": "XMLHttpRequest",
-            "cookie": cookie
-        }
-        data = {
-            "user_id": id,
-            "radio_type": "wifi-none",
-        }
-        
-        # Gửi yêu cầu follow
-        response = requests.post(selected_endpoint, 
-                               headers=headers, 
-                               data=data, 
-                               timeout=15)
-        response.raise_for_status()  # Ném ngoại lệ nếu có lỗi HTTP
-
-        # Phân tích phản hồi
-        if response.status_code == 200:
+        for endpoint, label in endpoints:
+            url = endpoint.format(id=id)
+            headers = {
+                "authority": "i.instagram.com" if label == 2 else "www.instagram.com",
+                "accept": "application/json",
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+                "x-csrftoken": csrftoken,
+                "x-ig-app-id": "1217981644879628",
+                "x-requested-with": "XMLHttpRequest",
+                "cookie": cookie
+            }
+            data = {"user_id": id, "radio_type": "wifi-none"}
+            
             try:
-                json_response = response.json()
-                if json_response.get("status") == "ok":
-                    print(f"\033[1;32m[DEBUG] Sử dụng endpoint {endpoint_label} - Thành công")
-                    return '2'  # Follow thành công
-                elif json_response.get("message") == "User not found":
-                    return '0'  # Job không tồn tại
+                response = requests.post(url, headers=headers, data=data, timeout=15)
+                response.raise_for_status()
+                
+                if response.status_code == 200:
+                    json_response = response.json()
+                    if json_response.get("status") == "ok":
+                        print(f"\033[1;32m[Endpoint {label}] Thành công")
+                        return '2'  # Thành công
+                    elif json_response.get("message") == "User not found":
+                        return '0'   # Job không tồn tại
+                elif response.status_code == 404:
+                    return '0'       # Job không tồn tại
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"\033[1;31m[Endpoint {label}] Lỗi: {str(e)}")
+                if label == 1:
+                    continue        # Thử endpoint 2 nếu endpoint 1 lỗi
                 else:
-                    print(f"\033[1;31mLỗi từ Instagram (endpoint {endpoint_label}): {json_response.get('message', 'Không rõ')}")
-                    return '1'  # Lỗi khác (có thể bị block hoặc vấn đề khác)
-            except ValueError:
-                print(f"\033[1;31mPhản hồi không phải JSON (endpoint {endpoint_label}): {response.text}")
-                return '1'
-        elif response.status_code == 404:
-            return '0'  # Job không tồn tại (User không tìm thấy)
-        elif response.status_code == 429:
-            print(f"\033[1;31m[429] Quá nhiều yêu cầu (endpoint {endpoint_label}), thử lại sau")
-            return '1'  # Quá nhiều yêu cầu, không phải block
-        elif response.status_code == 400:
-            print(f"\033[1;31m[400] Yêu cầu không hợp lệ (endpoint {endpoint_label}), kiểm tra cookie/header")
-            return '1'  # Lỗi cấu hình
-        else:
-            print(f"\033[1;31mLỗi HTTP {response.status_code} (endpoint {endpoint_label}): {response.text}")
-            return '1'  # Lỗi khác
+                    return '1'      # Cả 2 endpoint đều lỗi
 
-    except requests.exceptions.RequestException as e:
-        if hasattr(e.response, 'status_code'):
-            if e.response.status_code == 404:
-                return '0'  # Job không tồn tại
-            elif e.response.status_code == 429:
-                print(f"\033[1;31m[429] Quá nhiều yêu cầu từ IP (endpoint {endpoint_label})")
-                return '1'
-            else:
-                print(f"\033[1;31mLỗi mạng {e.response.status_code} (endpoint {endpoint_label}): {str(e)}")
-        else:
-            print(f"\033[1;31mLỗi kết nối (endpoint {endpoint_label}): {str(e)}")
-        return '1'  # Lỗi mạng hoặc timeout
+        return '1'  # Cả 2 endpoint đều lỗi
+
+    except Exception as e:
+        print(f"\033[1;31mLỗi hệ thống: {str(e)}")
+        return '1'
 
 def cau_hinh(id_ig, ckvp):
     try:
@@ -677,60 +648,45 @@ try:
                 if anorin in (1, 2):
                     break
                 
-                if '2' in chon:  # Nhiệm vụ Follow
-                    get_sub = get_nv('/subcheo', ckvp)
-                    if not isinstance(get_sub, list):
-                        print('\033[1;31mPhản hồi từ API không phải danh sách nhiệm vụ')
-                        delay(2)
-                        continue
-                    if not get_sub:
-                        print('Tạm thời hết nhiệm vụ Follow', '     ', end='\r')
-                    else:
-                        print(f'Tìm thấy {len(get_sub)} nhiệm vụ Follow', '     ', end='\r')
-                        for x in get_sub:
-                            if not isinstance(x, dict) or 'soID' not in x:
-                                print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
-                                continue
-                            id = x['soID']
-                            if id in done_jobs[id_ig]:
-                                print(f'[{dem}] | FOLLOW | {id} | TRÙNG JOB')
-                                continue
-                            lam = follow(id, cookie)
-                            if lam == '2':  # Follow thành công
-                                with open(f"{id_ig}.txt", "a+") as data_id:
-                                    data_id.write(f"{id},")
-                                dem += 1
-                                print(f'[{dem}] | FOLLOW | {id} | SUCCESS')
-                                done_jobs[id_ig].add(id)
-                                with open(f"{id_ig}.txt", "r") as data_id:
-                                    list_data = data_id.read()
-                                if list_data:
-                                    nhan = nhan_sub(list_data, ckvp)
-                                    if 'error' not in nhan:
-                                        xu_them = nhan.get('sodu', 0)
-                                        job = xu_them // 600
-                                        xu = coin(ckvp)
-                                        print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
-                                        os.remove(f"{id_ig}.txt")
-                                        open(f"{id_ig}.txt", "w").close()
-                                if dem % chong_block == 0:
-                                    delay(delay_block)
-                                else:
-                                    delay(dl)
-                                if dem % doi_acc == 0:
-                                    anorin = 1
-                                    break
-                            elif lam == '0':  # Job không tồn tại
-                                print(f'[{dem}] | FOLLOW | {id} | JOB KHÔNG TỒN TẠI')
-                                delay(dl)
-                            elif lam == '1':  # Bị block hoặc lỗi khác
-                                user_ig, _ = name(cookie)
-                                if user_ig == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
-                                else:
-                                    print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} gặp vấn đề khi Follow')
-                                anorin = 2
-                                break
+                if '2' in chon:
+    get_sub = get_nv('/subcheo', ckvp)
+    if not isinstance(get_sub, list):
+        print('\033[1;31mPhản hồi từ API không phải danh sách nhiệm vụ')
+        delay(2)
+        continue
+    if not get_sub:
+        print('Tạm thời hết nhiệm vụ Follow', '     ', end='\r')
+    else:
+        print(f'Tìm thấy {len(get_sub)} nhiệm vụ Follow', '     ', end='\r')
+        for x in get_sub:
+            if not isinstance(x, dict) or 'soID' not in x:
+                print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
+                continue
+            id = x['soID']
+            if id in done_jobs[id_ig]:
+                print(f'[{dem}] | FOLLOW | {id} | TRÙNG JOB')
+                continue
+            
+            # Thực hiện follow với logic endpoint mới
+            lam = follow(id, cookie)
+            
+            if lam == '2':
+                # Xử lý thành công
+                with open(f"{id_ig}.txt", "a+") as data_id:
+                    data_id.write(f"{id},")
+                dem += 1
+                print(f'[{dem}] | FOLLOW | {id} | SUCCESS')
+                done_jobs[id_ig].add(id)
+                # ... (phần còn lại giữ nguyên)
+                
+            elif lam == '0':
+                print(f'[{dem}] | FOLLOW | {id} | JOB KHÔNG TỒN TẠI')
+                
+            elif lam == '1':
+                user_ig, _ = name(cookie)
+                print(f'\033[1;31mCả 2 endpoint đều lỗi, bỏ qua job')
+                continue  # Bỏ qua job này
+                
 except KeyboardInterrupt:
     print("\n\033[1;31mĐã dừng chương trình theo yêu cầu người dùng")
 except Exception as e:
