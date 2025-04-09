@@ -7,9 +7,28 @@ import traceback
 import datetime
 
 # Thông tin phiên bản của tool
-VERSION = "1.4.8"
+VERSION = "1.4.9"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
+
+# Danh sách User-Agent
+USER_AGENTS = [
+    # iPhone (4)
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 15_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.8 Mobile/15E148 Safari/604.1",
+    # Linux (4)
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/109.0",
+    "Mozilla/5.0 (X11; Linux i686; rv:102.0) Gecko/20100101 Firefox/102.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+    # Windows (4)
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+]
 
 # Hệ thống kiểm tra cập nhật
 def check_for_updates():
@@ -75,7 +94,7 @@ dem = 0
 
 def coin(ckvp):
     try:
-        headers = {'user-agent': 'Mozilla/5.0 (Linux; Android 11; Live 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.28 Mobile Safari/537.36', 'cookie': ckvp}
+        headers = {'user-agent': random.choice(USER_AGENTS), 'cookie': ckvp}
         response = requests.get('https://vipig.net/home.php', headers=headers, timeout=10)
         response.raise_for_status()
         text = response.text
@@ -133,7 +152,7 @@ def get_nv(type, ckvp):
             'content-type': 'text/html; charset=UTF-8',
             'accept': 'application/json, text/javascript, */*; q=0.01',
             'x-requested-with': 'XMLHttpRequest',
-            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
+            'user-agent': random.choice(USER_AGENTS),
             'cookie': ckvp
         }
         response = requests.post(f'https://vipig.net/kiemtien{type}/getpost.php', headers=headers, timeout=15)
@@ -150,7 +169,7 @@ def nhan_tien(list, ckvp, type):
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'accept': '*/*',
             'x-requested-with': 'XMLHttpRequest',
-            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
+            'user-agent': random.choice(USER_AGENTS),
             'cookie': ckvp
         }
         response = requests.post(f'https://vipig.net/kiemtien{type}/nhantien.php', headers=headers, data=data, timeout=15)
@@ -167,7 +186,7 @@ def nhan_sub(list, ckvp):
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'accept': '*/*',
             'x-requested-with': 'XMLHttpRequest',
-            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
+            'user-agent': random.choice(USER_AGENTS),
             'cookie': ckvp
         }
         response = requests.post('https://vipig.net/kiemtien/subcheo/nhantien2.php', headers=headers, data=data, timeout=15)
@@ -179,7 +198,7 @@ def nhan_sub(list, ckvp):
 
 def delay(dl):
     try:
-        for i in range(dl, -1, -1):
+        for i in range(int(dl), -1, -1):
             print(f'[AN ORIN][{i} Giây]           ', end='\r')
             sleep(1)
     except KeyboardInterrupt:
@@ -223,7 +242,7 @@ def save_cookie_info(cookie_info):
         return False
 
 def name(cookie, retries=3):
-    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+    user_agent = random.choice(USER_AGENTS)  # Sử dụng User-Agent ngẫu nhiên
     if 'useragent=' in cookie:
         user_agent = cookie.split('useragent=')[1].split(';')[0]
     try:
@@ -318,16 +337,23 @@ def bongoc(so):
 
 def like(id, cookie):
     try:
+        # Danh sách endpoint cho Like
+        endpoints = [
+            f"https://www.instagram.com/web/likes/{id}/like/",
+            f"https://i.instagram.com/api/v1/media/{id}/like/",
+            f"https://www.instagram.com/api/v1/web/likes/{id}/like/",
+        ]
+        endpoint = random.choice(endpoints)
         headers = {
             "x-ig-app-id": "1217981644879628",
             "accept": "*/*",
             "content-type": "application/x-www-form-urlencoded",
-            "user-agent": "Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36",
+            "user-agent": random.choice(USER_AGENTS),  # Chọn ngẫu nhiên User-Agent
             "x-csrftoken": cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else "",
             "x-requested-with": "XMLHttpRequest",
             "cookie": cookie
         }
-        response = requests.post(f'https://www.instagram.com/web/likes/{id}/like/', headers=headers, timeout=15)
+        response = requests.post(endpoint, headers=headers, timeout=15)
         response.raise_for_status()
         if 'ok' in response.text.lower():
             return '2'  # Like thành công
@@ -361,103 +387,77 @@ def get_id(link, cookie=None):
 
 def follow(id, cookie):
     try:
-        # Trích xuất csrftoken từ cookie
+        # Kiểm tra cookie trước khi thực hiện
+        user_ig, _ = name(cookie)
+        if user_ig == 'die':
+            print(f"\033[1;31mCookie đã hết hạn, bỏ qua: {cookie[:20]}...")
+            return '1'
+
+        # Danh sách endpoint cho Follow
+        endpoints = [
+            f"https://www.instagram.com/api/v1/friendships/create/{id}/",
+            f"https://i.instagram.com/api/v1/friendships/create/{id}/",
+            #f"https://www.instagram.com/web/friendships/{id}/follow/",
+            f"https://i.instagram.com/api/v1/friendships/follow/{id}/",
+        ]
+        endpoint = random.choice(endpoints)
         csrftoken = cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else ""
-        
-        # Hai endpoint cố định
-        endpoint_1 = f"https://www.instagram.com/api/v1/friendships/create/{id}/"
-        endpoint_2 = f"https://i.instagram.com/api/v1/friendships/create/{id}/"
-        
-        # Header tối ưu, mô phỏng thiết bị thực tế
         headers = {
             "accept": "application/json",
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+            "user-agent": random.choice(USER_AGENTS),
             "x-csrftoken": csrftoken,
             "x-ig-app-id": "1217981644879628",
             "x-requested-with": "XMLHttpRequest",
-            "cookie": cookie
+            "x-ig-www-claim": "0",
+            "x-instagram-ajax": "1000000000",
+            "cookie": cookie,
+            "origin": "https://www.instagram.com",
+            "referer": "https://www.instagram.com/"
         }
         data = {
             "user_id": id,
             "radio_type": "wifi-none",
+            "container_module": "profile",
+            "_uid": cookie.split('ds_user_id=')[1].split(';')[0] if 'ds_user_id=' in cookie else "",
         }
+        if "i.instagram.com" in endpoint:
+            headers["authority"] = "i.instagram.com"
+        else:
+            headers["authority"] = "www.instagram.com"
         
-        # Thử endpoint 1 trước
-        headers["authority"] = "www.instagram.com"
-        response = requests.post(endpoint_1, headers=headers, data=data, timeout=15)
+        response = requests.post(endpoint, headers=headers, data=data, timeout=15)
         if response.status_code == 200:
-            json_response = response.json()
-            if json_response.get("status") == "ok":
-                print("\033[1;32m[DEBUG] Sử dụng endpoint 1 - Thành công")
-                return '2'  # Follow thành công với endpoint 1
-            elif json_response.get("message") == "User not found":
-                print("\033[1;31m[DEBUG] Endpoint 1 - User không tồn tại")
-                return '0'  # Job không tồn tại
-            else:
-                print(f"\033[1;31m[DEBUG] Endpoint 1 lỗi: {json_response.get('message', 'Không rõ')}")
-                # Nếu endpoint 1 lỗi, thử endpoint 2
-                headers["authority"] = "i.instagram.com"
-                response = requests.post(endpoint_2, headers=headers, data=data, timeout=15)
-                if response.status_code == 200:
-                    json_response = response.json()
-                    if json_response.get("status") == "ok":
-                        print("\033[1;32m[DEBUG] Sử dụng endpoint 2 - Thành công")
-                        return '2'  # Follow thành công với endpoint 2
-                    elif json_response.get("message") == "User not found":
-                        print("\033[1;31m[DEBUG] Endpoint 2 - User không tồn tại")
-                        return '0'  # Job không tồn tại
-                    else:
-                        print(f"\033[1;31m[DEBUG] Cả 2 endpoint lỗi: {json_response.get('message', 'Không rõ')}")
-                        return '1'  # Cả 2 endpoint đều lỗi
-                elif response.status_code == 404:
-                    print("\033[1;31m[DEBUG] Endpoint 2 - Job không tồn tại")
+            try:
+                json_response = response.json()
+                if json_response.get("status") == "ok":
+                    print(f"\033[1;32m[DEBUG] Sử dụng {endpoint} - Thành công")
+                    return '2'
+                elif json_response.get("message") == "User not found":
+                    print(f"\033[1;31m[DEBUG] {endpoint} - User không tồn tại")
                     return '0'
-                elif response.status_code == 429:
-                    print("\033[1;31m[DEBUG] Endpoint 2 - [429] Quá nhiều yêu cầu")
-                    return '1'
                 else:
-                    print(f"\033[1;31m[DEBUG] Endpoint 2 lỗi HTTP {response.status_code}: {response.text}")
+                    print(f"\033[1;31m[DEBUG] {endpoint} lỗi: {json_response.get('message', 'Không rõ')}")
                     return '1'
+            except ValueError as e:
+                print(f"\033[1;31m[DEBUG] Phản hồi không phải JSON từ {endpoint}: {response.text[:100]}...")
+                return '1'
+        elif response.status_code == 400:
+            print(f"\033[1;31m[DEBUG] {endpoint} lỗi HTTP 400: {response.text}")
+            return '1'
         elif response.status_code == 404:
-            print("\033[1;31m[DEBUG] Endpoint 1 - Job không tồn tại")
+            print(f"\033[1;31m[DEBUG] {endpoint} - Job không tồn tại")
             return '0'
         elif response.status_code == 429:
-            print("\033[1;31m[DEBUG] Endpoint 1 - [429] Quá nhiều yêu cầu")
-            # Thử endpoint 2 khi endpoint 1 bị giới hạn
-            headers["authority"] = "i.instagram.com"
-            response = requests.post(endpoint_2, headers=headers, data=data, timeout=15)
-            if response.status_code == 200:
-                json_response = response.json()
-                if json_response.get("status") == "ok":
-                    print("\033[1;32m[DEBUG] Sử dụng endpoint 2 - Thành công")
-                    return '2'
-                else:
-                    print(f"\033[1;31m[DEBUG] Endpoint 2 lỗi sau 429: {json_response.get('message', 'Không rõ')}")
-                    return '1'
-            else:
-                print(f"\033[1;31m[DEBUG] Endpoint 2 lỗi HTTP {response.status_code}")
-                return '1'
+            print(f"\033[1;31m[DEBUG] {endpoint} - [429] Quá nhiều yêu cầu")
+            delay_with_backoff(attempts=3, base_delay=30)
+            return '1'
         else:
-            print(f"\033[1;31m[DEBUG] Endpoint 1 lỗi HTTP {response.status_code}: {response.text}")
-            # Thử endpoint 2 khi endpoint 1 gặp lỗi khác
-            headers["authority"] = "i.instagram.com"
-            response = requests.post(endpoint_2, headers=headers, data=data, timeout=15)
-            if response.status_code == 200:
-                json_response = response.json()
-                if json_response.get("status") == "ok":
-                    print("\033[1;32m[DEBUG] Sử dụng endpoint 2 - Thành công")
-                    return '2'
-                else:
-                    print(f"\033[1;31m[DEBUG] Endpoint 2 lỗi: {json_response.get('message', 'Không rõ')}")
-                    return '1'
-            else:
-                print(f"\033[1;31m[DEBUG] Endpoint 2 lỗi HTTP {response.status_code}")
-                return '1'
-
+            print(f"\033[1;31m[DEBUG] {endpoint} lỗi HTTP {response.status_code}: {response.text[:100]}...")
+            return '1'
     except requests.exceptions.RequestException as e:
         print(f"\033[1;31mLỗi kết nối: {str(e)}")
-        return '1'  # Lỗi mạng hoặc timeout
+        return '1'
     except Exception as e:
         print(f"\033[1;31mLỗi không xác định: {str(e)}")
         return '1'
@@ -468,7 +468,7 @@ def cau_hinh(id_ig, ckvp):
             'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'accept': '*/*',
             'x-requested-with': 'XMLHttpRequest',
-            'user-agent': 'Mozilla/5.0 (Linux; Android 11; vivo 1904) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36',
+            'user-agent': random.choice(USER_AGENTS),
             'cookie': ckvp
         }
         response = requests.post('https://vipig.net/cauhinh/datnick.php', headers=headers, data={'iddat[]': id_ig}, timeout=15)
@@ -559,7 +559,7 @@ try:
     elif choice == 'y':
         list_cookie = load_cookies_from_txt()
         if not list_cookie:
-            print('\033[1;31mKhông có cookie月末 nào trong file ck.txt! Vui lòng nhập cookie mới.')
+            print('\033[1;31mKhông có cookie nào trong file ck.txt! Vui lòng nhập cookie mới.')
             clear_cookie_file()
             x = 0
             print('[LƯU Ý] Muốn Dừng Thì Nhấn Enter')
@@ -597,9 +597,10 @@ try:
     dl = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mNhập Delay (giây):\033[1;33m '))
     chong_block = int(input('Sau bao nhiêu nhiệm vụ thì kích hoạt chống block: '))
     delay_block = int(input(f'Sau {chong_block} nhiệm vụ nghỉ ngơi bao nhiêu giây: '))
-    doi_acc = int(input('\033[1;97m[\033[1;91m❣\033[1;97m] \033[1;36m✈  \033[1;32mSau bao nhiêu nhiệm vụ thì đổi nick:\033[1;33m '))
     
-    done_jobs = {}
+    done_jobs = {}  # Lưu các job đã làm
+    success_counts = {}  # Lưu số job thành công cho từng id_ig
+    SUCCESS_THRESHOLD = 6  # Ngưỡng để nhận xu và đổi acc
 
     while True:
         if not list_cookie:
@@ -627,7 +628,8 @@ try:
             anorin = 0
             user_ig, id_ig = name(cookie)
             if user_ig == 'die':
-                print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die, chuyển sang cookie tiếp theo')
+                print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die, xóa khỏi danh sách')
+                list_cookie.pop(i)
                 continue
             ngoc = cau_hinh(id_ig, ckvp)
             if ngoc == '1':
@@ -641,6 +643,8 @@ try:
             
             if id_ig not in done_jobs:
                 done_jobs[id_ig] = set()
+            if id_ig not in success_counts:
+                success_counts[id_ig] = 0  # Khởi tạo số job thành công cho id_ig
 
             while True:
                 if anorin in (1, 2):
@@ -670,25 +674,27 @@ try:
                                 continue
                             lam = like(id, cookie)
                             if lam == '2':  # Like thành công
-                                nhan = nhan_tien(uid, ckvp, '')
-                                if 'mess' in nhan:
-                                    xu = coin(ckvp)
-                                    dem += 1
-                                    print(f'[{dem}] | LIKE | {id} | +300 | {xu}')
-                                    done_jobs[id_ig].add(uid)
-                                    if dem % chong_block == 0:
-                                        delay(delay_block)
-                                    else:
-                                        delay(dl)
-                                    if dem % doi_acc == 0:
-                                        anorin = 1
+                                success_counts[id_ig] += 1
+                                dem += 1
+                                done_jobs[id_ig].add(uid)
+                                print(f'[{dem}] | LIKE | {id} | SUCCESS | Thành công: {success_counts[id_ig]}/{SUCCESS_THRESHOLD}')
+                                if success_counts[id_ig] >= SUCCESS_THRESHOLD:
+                                    nhan = nhan_tien(uid, ckvp, '')
+                                    if 'mess' in nhan:
+                                        xu = coin(ckvp)
+                                        print(f'Nhận xu thành công | Tổng xu: {xu}')
+                                        success_counts[id_ig] = 0  # Reset đếm sau khi nhận xu
+                                        anorin = 1  # Đổi acc
                                         break
+                                    else:
+                                        print(f'[{dem}] | LIKE | {id} | ERROR NHẬN XU')
+                                if dem % chong_block == 0:
+                                    delay(delay_block)
                                 else:
-                                    print(f'[{dem}] | LIKE | {id} | ERROR')
-                                    delay(dl)
+                                    delay(random.uniform(dl, dl + 2))  # Delay ngẫu nhiên
                             elif lam == '0':  # Job không tồn tại
                                 print(f'[{dem}] | LIKE | {id} | JOB KHÔNG TỒN TẠI')
-                                delay(dl)
+                                delay(random.uniform(dl, dl + 2))
                             elif lam == '1':  # Bị block
                                 user_ig, _ = name(cookie)
                                 if user_ig == 'die':
@@ -724,30 +730,34 @@ try:
                             if lam == '2':  # Follow thành công
                                 with open(f"{id_ig}.txt", "a+") as data_id:
                                     data_id.write(f"{id},")
+                                success_counts[id_ig] += 1
                                 dem += 1
-                                print(f'[{dem}] | FOLLOW | {id} | SUCCESS')
                                 done_jobs[id_ig].add(id)
-                                with open(f"{id_ig}.txt", "r") as data_id:
-                                    list_data = data_id.read()
-                                if list_data:
-                                    nhan = nhan_sub(list_data, ckvp)
-                                    if 'error' not in nhan:
-                                        xu_them = nhan.get('sodu', 0)
-                                        job = xu_them // 600
-                                        xu = coin(ckvp)
-                                        print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
-                                        os.remove(f"{id_ig}.txt")
-                                        open(f"{id_ig}.txt", "w").close()
+                                print(f'[{dem}] | FOLLOW | {id} | SUCCESS | Thành công: {success_counts[id_ig]}/{SUCCESS_THRESHOLD}')
+                                if success_counts[id_ig] >= SUCCESS_THRESHOLD:
+                                    with open(f"{id_ig}.txt", "r") as data_id:
+                                        list_data = data_id.read()
+                                    if list_data:
+                                        nhan = nhan_sub(list_data, ckvp)
+                                        if 'error' not in nhan:
+                                            xu_them = nhan.get('sodu', 0)
+                                            job = xu_them // 600
+                                            xu = coin(ckvp)
+                                            print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
+                                            os.remove(f"{id_ig}.txt")
+                                            open(f"{id_ig}.txt", "w").close()
+                                            success_counts[id_ig] = 0  # Reset đếm sau khi nhận xu
+                                            anorin = 1  # Đổi acc
+                                            break
+                                        else:
+                                            print(f'[{dem}] | FOLLOW | {id} | ERROR NHẬN XU')
                                 if dem % chong_block == 0:
                                     delay(delay_block)
                                 else:
-                                    delay(dl)
-                                if dem % doi_acc == 0:
-                                    anorin = 1
-                                    break
+                                    delay(random.uniform(dl, dl + 2))  # Delay ngẫu nhiên
                             elif lam == '0':  # Job không tồn tại
                                 print(f'[{dem}] | FOLLOW | {id} | JOB KHÔNG TỒN TẠI')
-                                delay(dl)
+                                delay(random.uniform(dl, dl + 2))
                             elif lam == '1':  # Bị block hoặc lỗi khác
                                 user_ig, _ = name(cookie)
                                 if user_ig == 'die':
