@@ -7,7 +7,7 @@ import traceback
 import datetime
 
 # Thông tin phiên bản của tool
-VERSION = "1.5.1"
+VERSION = "1.5.2"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
@@ -162,22 +162,43 @@ def get_nv(type, ckvp):
         print(f"\033[1;31mLỗi khi lấy nhiệm vụ {type}: {e}")
         return []
 
-def nhan_tien(list, ckvp, type):
-    try:
-        data = f'id={list}'
-        headers = {
-            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'accept': '*/*',
-            'x-requested-with': 'XMLHttpRequest',
-            'user-agent': random.choice(USER_AGENTS),
-            'cookie': ckvp
-        }
-        response = requests.post(f'https://vipig.net/kiemtien{type}/nhantien.php', headers=headers, data=data, timeout=15)
-        response.raise_for_status()
-        return response.text
-    except Exception as e:
-        print(f"\033[1;31mLỗi khi nhận tiền: {e}")
-        return "error"
+def nhan_tien(list, ckvp, type, retries=3):
+    """
+    Gửi yêu cầu nhận xu với cơ chế thử lại nếu thất bại.
+    Trả về dict chứa trạng thái và thông tin từ server.
+    """
+    data = f'id={list}'
+    headers = {
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'accept': '*/*',
+        'x-requested-with': 'XMLHttpRequest',
+        'user-agent': random.choice(USER_AGENTS),
+        'cookie': ckvp
+    }
+    for attempt in range(retries):
+        try:
+            response = requests.post(f'https://vipig.net/kiemtien{type}/nhantien.php', headers=headers, data=data, timeout=15)
+            response.raise_for_status()
+            # Thử phân tích phản hồi dưới dạng JSON hoặc text
+            try:
+                result = response.json()  # Nếu server trả về JSON
+            except ValueError:
+                result = response.text  # Nếu server trả về text
+            return {
+                'status': 'success' if 'success' in str(result).lower() else 'fail',
+                'response': result,
+                'attempt': attempt + 1
+            }
+        except requests.exceptions.RequestException as e:
+            print(f"\033[1;31mLỗi khi nhận xu (lần {attempt + 1}/{retries}): {e}")
+            if attempt < retries - 1:
+                sleep(5 * (attempt + 1))  # Delay tăng dần trước khi thử lại
+            else:
+                return {
+                    'status': 'error',
+                    'response': str(e),
+                    'attempt': retries
+                }
 
 def nhan_sub(list, ckvp):
     try:
@@ -448,7 +469,7 @@ def follow(id, cookie):
                         print(f"\033[1;31m[DEBUG] {endpoint} - User không tồn tại")
                         return '0'
                     else:
-                        print(f"\033[1;31m[DEBUG出去] {endpoint} lỗi: {json_response.get('message', 'Không rõ')}")
+                        print(f"\033[1;31m[DEBUG] {endpoint} lỗi: {json_response.get('message', 'Không rõ')}")
                 elif response.status_code == 404:
                     print(f"\033[1;31m[DEBUG] {endpoint} - Job không tồn tại")
                     return '0'
@@ -691,12 +712,16 @@ try:
                             done_jobs[id_ig].add(uid)
                             print(f'[{dem}] | LIKE | {id} | SUCCESS')
                             nhan = nhan_tien(uid, ckvp, '')
-                            # Kiểm tra phản hồi từ nhan_tien()
-                            if nhan and "error" not in nhan.lower() and "fail" not in nhan.lower():
+                            if nhan['status'] == 'success':
+                                xu_old = xu  # Lưu số xu cũ để so sánh
+                                sleep(2)  # Đợi 2 giây để server đồng bộ
                                 xu = coin(ckvp)
-                                print(f'| LIKE | Nhận xu thành công | Tổng xu: {xu}')
+                                if int(xu) > int(xu_old):  # Kiểm tra xem xu có tăng không
+                                    print(f'| LIKE | Nhận xu thành công | Tổng xu: {xu} (+{int(xu) - int(xu_old)})')
+                                else:
+                                    print(f'| LIKE | Nhận xu thành công nhưng số xu không tăng | Tổng xu: {xu}')
                             else:
-                                print(f'| LIKE | {id} | ERROR NHẬN XU: {nhan}')
+                                print(f'| LIKE | {id} | ERROR NHẬN XU: {nhan["response"]} (Thử {nhan["attempt"]} lần)')
                             if dem % chong_block == 0:
                                 delay(delay_block)
                             else:
