@@ -7,7 +7,7 @@ import traceback
 import datetime
 
 # Thông tin phiên bản của tool
-VERSION = "1.5"
+VERSION = "1.5.1"
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/gs.py"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/Dat075/vipig123/refs/heads/main/version.txt"
 
@@ -337,34 +337,44 @@ def bongoc(so):
 
 def like(id, cookie):
     try:
-        # Danh sách endpoint cho Like
+        # Danh sách endpoint cho Like theo thứ tự ưu tiên
         endpoints = [
-            f"https://www.instagram.com/web/likes/{id}/like/",
-            f"https://i.instagram.com/api/v1/media/{id}/like/",
-            f"https://www.instagram.com/api/v1/web/likes/{id}/like/",
+            "https://www.instagram.com/web/likes/{id}/like/",
+            "https://i.instagram.com/api/v1/media/{id}/like/",
+            "https://www.instagram.com/api/v1/web/likes/{id}/like/",
         ]
-        endpoint = random.choice(endpoints)
+        
         headers = {
             "x-ig-app-id": "1217981644879628",
             "accept": "*/*",
             "content-type": "application/x-www-form-urlencoded",
-            "user-agent": random.choice(USER_AGENTS),  # Chọn ngẫu nhiên User-Agent
+            "user-agent": random.choice(USER_AGENTS),
             "x-csrftoken": cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else "",
             "x-requested-with": "XMLHttpRequest",
             "cookie": cookie
         }
-        response = requests.post(endpoint, headers=headers, timeout=15)
-        response.raise_for_status()
-        if 'ok' in response.text.lower():
-            return '2'  # Like thành công
-        elif 'post_not_found' in response.text.lower() or response.status_code == 404:
-            return '0'  # Job không tồn tại
-        return '1'  # Bị block hoặc lỗi khác
-    except requests.exceptions.RequestException as e:
-        if hasattr(e.response, 'status_code') and e.response.status_code == 404:
-            return '0'  # Job không tồn tại
-        print(f"\033[1;31mLỗi trong quá trình like: {e}")
-        return '1'  # Lỗi mạng hoặc block
+        
+        for endpoint_template in endpoints:
+            endpoint = endpoint_template.format(id=id)
+            try:
+                response = requests.post(endpoint, headers=headers, timeout=15)
+                response.raise_for_status()
+                if 'ok' in response.text.lower():
+                    return '2'  # Like thành công
+                elif 'post_not_found' in response.text.lower() or response.status_code == 404:
+                    return '0'  # Job không tồn tại
+                print(f"\033[1;31mEndpoint {endpoint} lỗi: {response.text[:100]}... Thử endpoint tiếp theo.")
+            except requests.exceptions.RequestException as e:
+                if hasattr(e.response, 'status_code') and e.response.status_code == 404:
+                    return '0'  # Job không tồn tại
+                print(f"\033[1;31mLỗi với endpoint {endpoint}: {e}. Thử endpoint tiếp theo.")
+                continue
+        
+        print(f"\033[1;31mĐã thử tất cả endpoint cho ID {id} nhưng vẫn lỗi. Bỏ qua job.")
+        return '1'  # Tất cả endpoint đều lỗi
+    except Exception as e:
+        print(f"\033[1;31mLỗi không xác định trong quá trình like: {e}")
+        return '1'
 
 def get_id(link, cookie=None):
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
@@ -393,14 +403,13 @@ def follow(id, cookie):
             print(f"\033[1;31mCookie đã hết hạn, bỏ qua: {cookie[:20]}...")
             return '1'
 
-        # Danh sách endpoint cho Follow
+        # Danh sách endpoint cho Follow theo thứ tự ưu tiên
         endpoints = [
             f"https://www.instagram.com/api/v1/friendships/create/{id}/",
             f"https://i.instagram.com/api/v1/friendships/create/{id}/",
-            #f"https://www.instagram.com/web/friendships/{id}/follow/",
             f"https://i.instagram.com/api/v1/friendships/follow/{id}/",
         ]
-        endpoint = random.choice(endpoints)
+        
         csrftoken = cookie.split('csrftoken=')[1].split(';')[0] if 'csrftoken=' in cookie else ""
         headers = {
             "accept": "application/json",
@@ -421,43 +430,40 @@ def follow(id, cookie):
             "container_module": "profile",
             "_uid": cookie.split('ds_user_id=')[1].split(';')[0] if 'ds_user_id=' in cookie else "",
         }
-        if "i.instagram.com" in endpoint:
-            headers["authority"] = "i.instagram.com"
-        else:
-            headers["authority"] = "www.instagram.com"
-        
-        response = requests.post(endpoint, headers=headers, data=data, timeout=15)
-        if response.status_code == 200:
+
+        for endpoint in endpoints:
+            if "i.instagram.com" in endpoint:
+                headers["authority"] = "i.instagram.com"
+            else:
+                headers["authority"] = "www.instagram.com"
+            
             try:
-                json_response = response.json()
-                if json_response.get("status") == "ok":
-                    print(f"\033[1;32m[DEBUG] Sử dụng {endpoint} - Thành công")
-                    return '2'
-                elif json_response.get("message") == "User not found":
-                    print(f"\033[1;31m[DEBUG] {endpoint} - User không tồn tại")
+                response = requests.post(endpoint, headers=headers, data=data, timeout=15)
+                if response.status_code == 200:
+                    json_response = response.json()
+                    if json_response.get("status") == "ok":
+                        print(f"\033[1;32m[DEBUG] Sử dụng {endpoint} - Thành công")
+                        return '2'
+                    elif json_response.get("message") == "User not found":
+                        print(f"\033[1;31m[DEBUG] {endpoint} - User không tồn tại")
+                        return '0'
+                    else:
+                        print(f"\033[1;31m[DEBUG出去] {endpoint} lỗi: {json_response.get('message', 'Không rõ')}")
+                elif response.status_code == 404:
+                    print(f"\033[1;31m[DEBUG] {endpoint} - Job không tồn tại")
                     return '0'
+                elif response.status_code == 429:
+                    print(f"\033[1;31m[DEBUG] {endpoint} - [429] Quá nhiều yêu cầu")
+                    delay_with_backoff(attempts=3, base_delay=30)
                 else:
-                    print(f"\033[1;31m[DEBUG] {endpoint} lỗi: {json_response.get('message', 'Không rõ')}")
-                    return '1'
-            except ValueError as e:
-                print(f"\033[1;31m[DEBUG] Phản hồi không phải JSON từ {endpoint}: {response.text[:100]}...")
-                return '1'
-        elif response.status_code == 400:
-            print(f"\033[1;31m[DEBUG] {endpoint} lỗi HTTP 400: {response.text}")
-            return '1'
-        elif response.status_code == 404:
-            print(f"\033[1;31m[DEBUG] {endpoint} - Job không tồn tại")
-            return '0'
-        elif response.status_code == 429:
-            print(f"\033[1;31m[DEBUG] {endpoint} - [429] Quá nhiều yêu cầu")
-            delay_with_backoff(attempts=3, base_delay=30)
-            return '1'
-        else:
-            print(f"\033[1;31m[DEBUG] {endpoint} lỗi HTTP {response.status_code}: {response.text[:100]}...")
-            return '1'
-    except requests.exceptions.RequestException as e:
-        print(f"\033[1;31mLỗi kết nối: {str(e)}")
-        return '1'
+                    print(f"\033[1;31m[DEBUG] {endpoint} lỗi HTTP {response.status_code}: {response.text[:100]}...")
+                print(f"\033[1;31mLỗi với endpoint {endpoint}. Thử endpoint tiếp theo.")
+            except requests.exceptions.RequestException as e:
+                print(f"\033[1;31mLỗi kết nối với {endpoint}: {str(e)}. Thử endpoint tiếp theo.")
+                continue
+        
+        print(f"\033[1;31mĐã thử tất cả endpoint cho ID {id} nhưng vẫn lỗi. Bỏ qua job.")
+        return '1'  # Tất cả endpoint đều lỗi
     except Exception as e:
         print(f"\033[1;31mLỗi không xác định: {str(e)}")
         return '1'
@@ -660,50 +666,58 @@ try:
                         print('Tạm thời hết nhiệm vụ Like', '     ', end='\r')
                     else:
                         print(f'Tìm thấy {len(get_like)} nhiệm vụ Like', '     ', end='\r')
-                        for x in get_like:
-                            if not isinstance(x, dict) or 'link' not in x or 'idpost' not in x:
-                                print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
-                                continue
-                            link = x['link']
-                            uid = x['idpost']
-                            id = get_id(link)
-                            if not id:
-                                continue
-                            if uid in done_jobs[id_ig]:
-                                print(f'[{dem}] | LIKE | {id} | TRÙNG JOB')
-                                continue
-                            lam = like(id, cookie)
-                            if lam == '2':  # Like thành công
-                                success_counts[id_ig] += 1
-                                dem += 1
-                                done_jobs[id_ig].add(uid)
-                                print(f'[{dem}] | LIKE | {id} | SUCCESS | Thành công: {success_counts[id_ig]}/{SUCCESS_THRESHOLD}')
-                                if success_counts[id_ig] >= SUCCESS_THRESHOLD:
-                                    nhan = nhan_tien(uid, ckvp, '')
-                                    if 'mess' in nhan:
-                                        xu = coin(ckvp)
-                                        print(f'Nhận xu thành công | Tổng xu: {xu}')
-                                        success_counts[id_ig] = 0  # Reset đếm sau khi nhận xu
-                                        anorin = 1  # Đổi acc
-                                        break
-                                    else:
-                                        print(f'[{dem}] | LIKE | {id} | ERROR NHẬN XU')
-                                if dem % chong_block == 0:
-                                    delay(delay_block)
-                                else:
-                                    delay(random.uniform(dl, dl + 2))  # Delay ngẫu nhiên
-                            elif lam == '0':  # Job không tồn tại
-                                print(f'[{dem}] | LIKE | {id} | JOB KHÔNG TỒN TẠI')
+                    fail_count = 0
+                    for x in get_like:
+                        if not isinstance(x, dict) or 'link' not in x or 'idpost' not in x:
+                            print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
+                            continue
+                        link = x['link']
+                        uid = x['idpost']
+                        id = get_id(link)
+                        if not id:
+                            continue
+                        if uid in done_jobs[id_ig]:
+                            print(f'[{dem}] | LIKE | {id} | TRÙNG JOB')
+                            fail_count += 1
+                            if fail_count >= 6:
+                                print(f'{red}Đã gặp lỗi {fail_count} lần liên tiếp. Đổi cookie...')
+                                anorin = 1
+                                break
+                            continue
+                        lam = like(id, cookie)
+                        if lam == '2':
+                            dem += 1
+                            fail_count = 0
+                            done_jobs[id_ig].add(uid)
+                            print(f'[{dem}] | LIKE | {id} | SUCCESS')
+                            nhan = nhan_tien(uid, ckvp, '')
+                            # Kiểm tra phản hồi từ nhan_tien()
+                            if nhan and "error" not in nhan.lower() and "fail" not in nhan.lower():
+                                xu = coin(ckvp)
+                                print(f'| LIKE | Nhận xu thành công | Tổng xu: {xu}')
+                            else:
+                                print(f'| LIKE | {id} | ERROR NHẬN XU: {nhan}')
+                            if dem % chong_block == 0:
+                                delay(delay_block)
+                            else:
                                 delay(random.uniform(dl, dl + 2))
-                            elif lam == '1':  # Bị block
-                                user_ig, _ = name(cookie)
-                                if user_ig == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
-                                    anorin = 2
-                                    break
-                                print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Like')
+                        elif lam == '0':
+                            print(f'[{dem}] | LIKE | {id} | JOB KHÔNG TỒN TẠI')
+                            fail_count += 1
+                            if fail_count >= 6:
+                                print(f'{red}Đã gặp lỗi {fail_count} lần liên tiếp. Đổi cookie...')
+                                anorin = 1
+                                break
+                            delay(random.uniform(dl, dl + 2))
+                        elif lam == '1':
+                            user_ig, _ = name(cookie)
+                            if user_ig == 'die':
+                                print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
                                 anorin = 2
                                 break
+                            print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Like')
+                            anorin = 2
+                            break
                 
                 if anorin in (1, 2):
                     break
@@ -718,54 +732,67 @@ try:
                         print('Tạm thời hết nhiệm vụ Follow', '     ', end='\r')
                     else:
                         print(f'Tìm thấy {len(get_sub)} nhiệm vụ Follow', '     ', end='\r')
-                        for x in get_sub:
-                            if not isinstance(x, dict) or 'soID' not in x:
-                                print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
-                                continue
-                            id = x['soID']
-                            if id in done_jobs[id_ig]:
-                                print(f'[{dem}] | FOLLOW | {id} | TRÙNG JOB')
-                                continue
-                            lam = follow(id, cookie)
-                            if lam == '2':  # Follow thành công
-                                with open(f"{id_ig}.txt", "a+") as data_id:
-                                    data_id.write(f"{id},")
-                                success_counts[id_ig] += 1
-                                dem += 1
-                                done_jobs[id_ig].add(id)
-                                print(f'[{dem}] | FOLLOW | {id} | SUCCESS | Thành công: {success_counts[id_ig]}/{SUCCESS_THRESHOLD}')
-                                if success_counts[id_ig] >= SUCCESS_THRESHOLD:
-                                    with open(f"{id_ig}.txt", "r") as data_id:
-                                        list_data = data_id.read()
-                                    if list_data:
-                                        nhan = nhan_sub(list_data, ckvp)
-                                        if 'error' not in nhan:
-                                            xu_them = nhan.get('sodu', 0)
-                                            job = xu_them // 600
-                                            xu = coin(ckvp)
-                                            print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
-                                            os.remove(f"{id_ig}.txt")
-                                            open(f"{id_ig}.txt", "w").close()
-                                            success_counts[id_ig] = 0  # Reset đếm sau khi nhận xu
-                                            anorin = 1  # Đổi acc
-                                            break
-                                        else:
-                                            print(f'[{dem}] | FOLLOW | {id} | ERROR NHẬN XU')
-                                if dem % chong_block == 0:
-                                    delay(delay_block)
-                                else:
-                                    delay(random.uniform(dl, dl + 2))  # Delay ngẫu nhiên
-                            elif lam == '0':  # Job không tồn tại
-                                print(f'[{dem}] | FOLLOW | {id} | JOB KHÔNG TỒN TẠI')
-                                delay(random.uniform(dl, dl + 2))
-                            elif lam == '1':  # Bị block hoặc lỗi khác
-                                user_ig, _ = name(cookie)
-                                if user_ig == 'die':
-                                    print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
-                                else:
-                                    print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} gặp vấn đề khi Follow')
-                                anorin = 2
+                    fail_count = 0
+                    for x in get_sub:
+                        if not isinstance(x, dict) or 'soID' not in x:
+                            print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
+                            continue
+                        id = x['soID']
+                        if id in done_jobs[id_ig]:
+                            print(f'[{dem}] | FOLLOW | {id} | TRÙNG JOB')
+                            fail_count += 1
+                            if fail_count >= 6:
+                                print(f'{red}Đã gặp lỗi {fail_count} lần liên tiếp. Đổi cookie...')
+                                anorin = 1
                                 break
+                            continue
+                        lam = follow(id, cookie)
+                        if lam == '2':
+                            success_counts[id_ig] += 1
+                            dem += 1
+                            fail_count = 0
+                            done_jobs[id_ig].add(id)
+                            print(f'[{dem}] | FOLLOW | {id} | SUCCESS | Thành công: {success_counts[id_ig]}/{SUCCESS_THRESHOLD}')
+                            with open(f"{id_ig}.txt", "a+") as data_id:
+                                data_id.write(f"{id},")
+                            if success_counts[id_ig] >= SUCCESS_THRESHOLD:
+                                with open(f"{id_ig}.txt", "r") as data_id:
+                                    list_data = data_id.read()
+                                if list_data:
+                                    nhan = nhan_sub(list_data, ckvp)
+                                    if 'error' not in nhan:
+                                        xu_them = nhan.get('sodu', 0)
+                                        job = xu_them // 600
+                                        xu = coin(ckvp)
+                                        print(f'Nhận thành công {job} nhiệm vụ Follow | +{xu_them} | {xu}')
+                                        os.remove(f"{id_ig}.txt")
+                                        open(f"{id_ig}.txt", "w").close()
+                                        success_counts[id_ig] = 0
+                                        anorin = 1
+                                        break
+                                    else:
+                                        print(f'[{dem}] | FOLLOW | {id} | ERROR NHẬN XU')
+                            if dem % chong_block == 0:
+                                delay(delay_block)
+                            else:
+                                delay(random.uniform(dl, dl + 2))
+                        elif lam == '0':
+                            print(f'[{dem}] | FOLLOW | {id} | JOB KHÔNG TỒN TẠI')
+                            fail_count += 1
+                            if fail_count >= 6:
+                                print(f'{red}Đã gặp lỗi {fail_count} lần liên tiếp. Đổi cookie...')
+                                anorin = 1
+                                break
+                            delay(random.uniform(dl, dl + 2))
+                        elif lam == '1':
+                            user_ig, _ = name(cookie)
+                            if user_ig == 'die':
+                                print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
+                            else:
+                                print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} gặp vấn đề khi Follow')
+                            anorin = 2
+                            break
+
 except KeyboardInterrupt:
     print("\n\033[1;31mĐã dừng chương trình theo yêu cầu người dùng")
 except Exception as e:
