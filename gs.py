@@ -244,7 +244,7 @@ def save_cookie_info(cookie_info):
         if os.path.exists(file_path):
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-        if not isinstance(datajęcie, list):
+        if not isinstance(data, list):
             data = []
         for i, item in enumerate(data):
             if item.get('cookie') == cookie_info.get('cookie'):
