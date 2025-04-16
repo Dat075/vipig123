@@ -179,7 +179,6 @@ def nhan_tien(list, ckvp, type, retries=3):
                 result = response.json()
             except ValueError:
                 result = response.text
-            print(f"\033[1;33m[DEBUG] Phản hồi từ nhan_tien: {result}")
             status = 'success' if 'thành công' in str(result).lower() else 'fail'
             return {
                 'status': status,
@@ -669,23 +668,24 @@ try:
                 if '1' in chon:
                     get_like = get_nv('', ckvp)
                     if not isinstance(get_like, list):
-                        print('\033[1;31mPhản hồi từ API không phải danh sách nhiệm vụ')
                         delay(2)
                         continue
                     if not get_like:
                         print('Tạm thời hết nhiệm vụ Like', '     ', end='\r')
                     else:
                         print(f'Tìm thấy {len(get_like)} nhiệm vụ Like', '     ', end='\r')
+
                     fail_count = 0
                     for x in get_like:
                         if not isinstance(x, dict) or 'link' not in x or 'idpost' not in x:
-                            print('\033[1;31mDữ liệu nhiệm vụ không hợp lệ')
                             continue
+
                         link = x['link']
                         uid = x['idpost']
                         id = get_id(link)
                         if not id:
                             continue
+
                         if uid in done_jobs[id_ig]:
                             print(f'[{dem}] | LIKE | {id} | TRÙNG JOB')
                             fail_count += 1
@@ -694,29 +694,30 @@ try:
                                 anorin = 1
                                 break
                             continue
+
                         lam = like(id, cookie)
                         if lam == '2':
                             dem += 1
                             fail_count = 0
                             done_jobs[id_ig].add(uid)
-                            print(f'[{dem}] | LIKE | {id} | SUCCESS')
-                            xu_old = coin(ckvp)
+                            tg = datetime.datetime.now().strftime('%H:%M')
+                            print(f'[{dem}] | {tg} | LIKE | {id} | +300')
+
                             nhan = nhan_tien(uid, ckvp, '')
                             if nhan['status'] == 'success':
-                                sleep(2)
-                                xu = coin(ckvp)
-                                xu_old_int = int(xu_old) if xu_old.isdigit() else 0
-                                xu_new_int = int(xu) if xu.isdigit() else 0
-                                if xu_new_int > xu_old_int:
-                                    print(f'| LIKE | Nhận xu thành công | Tổng xu: {xu} (+{xu_new_int - xu_old_int})')
-                                else:
-                                    print(f'| LIKE | Server báo thành công nhưng số xu không tăng | Tổng xu: {xu} | Kiểm tra web để xác nhận')
+                                success_counts[id_ig] += 1
+                                if success_counts[id_ig] >= SUCCESS_THRESHOLD:
+                                    xu = coin(ckvp)
+                                    print(f'Đã hoàn thành {SUCCESS_THRESHOLD} nhiệm vụ LIKE | Tổng xu hiện tại: {xu}')
+                                    success_counts[id_ig] = 0
                             else:
-                                print(f'| LIKE | {id} | ERROR NHẬN XU: {nhan["response"]} (Thử {nhan["attempt"]} lần)')
+                                print(f'| LIKE | {id} | ERROR NHẬN XU: {nhan["response"]}')
+
                             if dem % chong_block == 0:
                                 delay(delay_block)
                             else:
                                 delay(random.uniform(dl, dl + 2))
+
                         elif lam == '0':
                             print(f'[{dem}] | LIKE | {id} | JOB KHÔNG TỒN TẠI')
                             fail_count += 1
@@ -725,16 +726,17 @@ try:
                                 anorin = 1
                                 break
                             delay(random.uniform(dl, dl + 2))
+
                         elif lam == '1':
                             user_ig, _ = name(cookie)
                             if user_ig == 'die':
-                                print(f'\033[1;31mCookie của {cam}{user_ig}{trang} đã die')
+                                print(f'\033[1;31mCookie đã die, xóa khỏi danh sách')
                                 anorin = 2
                                 break
                             print(f'\033[1;31mTài khoản {cam}{user_ig}{trang} bị chặn Like')
                             anorin = 2
                             break
-                
+
                 if anorin in (1, 2):
                     break
                 
